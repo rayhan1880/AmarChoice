@@ -1,0 +1,6 @@
+{
+  "name": "AmarChoice Landing Page & Admin Panel",
+  "description": "Multi-landing page & complete e-commerce store builder with cart, order management, Steadfast & Pathao courier, page-specific SMS templates, Google Sheets integration, and Facebook Pixel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
