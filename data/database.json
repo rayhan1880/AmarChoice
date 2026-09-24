@@ -1,6 +1,107 @@
 {
   "landingPages": [
     {
+      "id": "lp-1789981403089",
+      "slug": "1test-page",
+      "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "brandName": "1test page",
+      "brandTagline": "AmarChoice – প্রিমিয়াম বাংলাদেশি কালেকশন",
+      "topBannerText": "🎉 স্পেশাল অফার – সীমিত সময়ের জন্য ৫০% ছাড়! দ্রুত অর্ডার করুন!",
+      "showTopBanner": true,
+      "heroTitle": "স্পেশাল প্রিমিয়াম কালেকশন",
+      "ratingStars": "★★★★★",
+      "ratingCountText": "৩২৬+ কাস্টমার সন্তুষ্ট",
+      "mainImage": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80",
+      "galleryImages": [
+        "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80",
+        "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80"
+      ],
+      "features": [
+        "১০০% প্রিমিয়াম কোয়ালিটি ফেব্রিক – অত্যন্ত আরামদায়ক ও মানসম্মত",
+        "গলায় ও হাতায় চমৎকার ও নিখুঁত ফিনিশিং",
+        "সাইজ: ৩৮ থেকে ৪৬ পর্যন্ত সাইজ উপলব্ধ",
+        "পণ্য হাতে পেয়ে দেখে মূল্য পরিশোধ করার সুবিধা (ক্যাশ অন ডেলিভারি)",
+        "পছন্দ না হলে সাথে সাথে রিটার্ন বা সাইজ এক্সচেঞ্জ সুবিধা"
+      ],
+      "countdown": {
+        "enabled": true,
+        "hours": 6,
+        "title": "⏰ অফার শেষ হওয়ার আগেই অর্ডার করুন!"
+      },
+      "callNumber": "01606318193",
+      "products": [
+        {
+          "id": "prod-1789981372443-1",
+          "name": "রয়্যাল ব্লু (Royal Blue)",
+          "colorName": "রয়্যাল ব্লু",
+          "price": 999,
+          "oldPrice": 1650,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80",
+          "sizes": [
+            "৩৮",
+            "৪০",
+            "৪২",
+            "৪৪",
+            "৪৬"
+          ],
+          "inStock": true,
+          "colorCode": "#1e3a8a",
+          "customFields": [
+            {
+              "id": "field_size_prod-1789981372443-1",
+              "label": "বডি সাইজ ",
+              "options": [
+                "৩৮",
+                "৪০",
+                "৪২",
+                "৪৪",
+                "৪৬"
+              ]
+            }
+          ]
+        }
+      ],
+      "storeCategories": [
+        "সকল পণ্য",
+        "বোরকা ও আবায়া",
+        "পাঞ্জাবি",
+        "শাড়ি",
+        "হিজাব",
+        "অফার"
+      ],
+      "deliveryCharges": {
+        "isFreeDelivery": false,
+        "insideDhaka": 60,
+        "outsideDhaka": 120
+      },
+      "metaPixelEnabled": false,
+      "facebookPixelId": "",
+      "metaCapiToken": "",
+      "metaTestCode": "",
+      "tiktokPixelEnabled": false,
+      "tiktokPixelId": "",
+      "tiktokCapiToken": "",
+      "tiktokTestCode": "",
+      "themeColor": "#c0392b",
+      "pageType": "landing",
+      "isDefault": false,
+      "googleSheetConfig": {
+        "enabled": false,
+        "webhookUrl": "",
+        "sheetName": "Orders"
+      },
+      "smsTemplates": {
+        "enabled": false,
+        "senderId": "",
+        "orderReceived": "প্রিয় {customer_name}, {brand_name}-এ আপনার অর্ডার #{order_id} গ্রহণ করা হয়েছে। মোট বিল: {total}৳।",
+        "orderConfirmed": "প্রিয় {customer_name}, আপনার অর্ডার #{order_id} নিশ্চিত করা হয়েছে। খুব শীঘ্রই পার্সেল পাঠানো হবে। ধন্যবাদ - {brand_name}",
+        "courierDispatched": "প্রিয় {customer_name}, আপনার পার্সেলটি {courier_name} কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: {tracking_code}। - {brand_name}",
+        "delivered": "প্রিয় {customer_name}, আপনার অর্ডার #{order_id} সফলভাবে ডেলিভারি হয়েছে। আমাদের সাথে থাকার জন্য ধন্যবাদ! - {brand_name}"
+      },
+      "createdAt": "2026-09-21T09:03:23.089Z",
+      "updatedAt": "2026-09-21T09:05:55.258Z"
+    },
+    {
       "id": "lp-mayaboti-1",
       "slug": "mayaboti-dress",
       "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -128,15 +229,15 @@
         }
       ],
       "deliveryCharges": {
+        "isFreeDelivery": false,
         "insideDhaka": 60,
-        "outsideDhaka": 120,
-        "isFreeDelivery": true
+        "outsideDhaka": 120
       },
       "facebookPixelId": "984512398471201",
       "themeColor": "#c0392b",
-      "isDefault": true,
+      "isDefault": false,
       "createdAt": "2026-09-01T10:00:00.000Z",
-      "updatedAt": "2026-09-15T10:00:00.000Z",
+      "updatedAt": "2026-09-21T09:02:21.136Z",
       "pageType": "landing",
       "storeCategories": [
         "সকল পণ্য",
@@ -145,7 +246,27 @@
         "শাড়ি",
         "হিজাব",
         "অফার"
-      ]
+      ],
+      "metaPixelEnabled": true,
+      "metaCapiToken": "",
+      "metaTestCode": "",
+      "tiktokPixelEnabled": false,
+      "tiktokPixelId": "",
+      "tiktokCapiToken": "",
+      "tiktokTestCode": "",
+      "googleSheetConfig": {
+        "enabled": false,
+        "webhookUrl": "",
+        "sheetName": "Orders"
+      },
+      "smsTemplates": {
+        "enabled": true,
+        "senderId": "",
+        "orderReceived": "প্রিয় {customer_name}, {brand_name}-এ আপনার অর্ডার #{order_id} গ্রহণ করা হয়েছে। মোট বিল: {total}৳।",
+        "orderConfirmed": "প্রিয় {customer_name}, আপনার অর্ডার #{order_id} নিশ্চিত করা হয়েছে। খুব শীঘ্রই পার্সেল পাঠানো হবে। ধন্যবাদ - {brand_name}",
+        "courierDispatched": "প্রিয় {customer_name}, আপনার পার্সেলটি {courier_name} কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: {tracking_code}। - {brand_name}",
+        "delivered": "প্রিয় {customer_name}, আপনার অর্ডার #{order_id} সফলভাবে ডেলিভারি হয়েছে। আমাদের সাথে থাকার জন্য ধন্যবাদ! - {brand_name}"
+      }
     },
     {
       "id": "lp-smartwatch-2",
@@ -206,15 +327,15 @@
         }
       ],
       "deliveryCharges": {
+        "isFreeDelivery": false,
         "insideDhaka": 70,
-        "outsideDhaka": 130,
-        "isFreeDelivery": false
+        "outsideDhaka": 130
       },
       "facebookPixelId": "554433221199001",
       "themeColor": "#1e40af",
       "isDefault": false,
       "createdAt": "2026-09-05T12:00:00.000Z",
-      "updatedAt": "2026-09-15T11:00:00.000Z",
+      "updatedAt": "2026-09-21T09:06:18.396Z",
       "pageType": "landing",
       "storeCategories": [
         "সকল পণ্য",
@@ -223,7 +344,27 @@
         "শাড়ি",
         "হিজাব",
         "অফার"
-      ]
+      ],
+      "metaPixelEnabled": true,
+      "metaCapiToken": "",
+      "metaTestCode": "",
+      "tiktokPixelEnabled": false,
+      "tiktokPixelId": "",
+      "tiktokCapiToken": "",
+      "tiktokTestCode": "",
+      "googleSheetConfig": {
+        "enabled": false,
+        "webhookUrl": "",
+        "sheetName": "Orders"
+      },
+      "smsTemplates": {
+        "enabled": true,
+        "senderId": "",
+        "orderReceived": "প্রিয় {customer_name}, {brand_name}-এ আপনার অর্ডার #{order_id} গ্রহণ করা হয়েছে। মোট বিল: {total}৳।",
+        "orderConfirmed": "প্রিয় {customer_name}, আপনার অর্ডার #{order_id} নিশ্চিত করা হয়েছে। খুব শীঘ্রই পার্সেল পাঠানো হবে। ধন্যবাদ - {brand_name}",
+        "courierDispatched": "প্রিয় {customer_name}, আপনার পার্সেলটি {courier_name} কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: {tracking_code}। - {brand_name}",
+        "delivered": "প্রিয় {customer_name}, আপনার অর্ডার #{order_id} সফলভাবে ডেলিভারি হয়েছে। আমাদের সাথে থাকার জন্য ধন্যবাদ! - {brand_name}"
+      }
     },
     {
       "id": "lp-ecommerce-store-3",
@@ -381,244 +522,350 @@
         "courierDispatched": "প্রিয় {customer_name}, আপনার পার্সেলটি {courier_name} কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: {tracking_code}।",
         "delivered": "প্রিয় {customer_name}, আপনার অর্ডার #{order_id} সফলভাবে ডেলিভারি করা হয়েছে। আমাদের পণ্য কেমন লাগলো জানাতে ভুলবেন না!"
       },
-      "isDefault": false,
+      "isDefault": true,
       "createdAt": "2026-09-10T12:00:00.000Z",
       "updatedAt": "2026-09-15T12:00:00.000Z"
     }
   ],
   "orders": [
     {
-      "id": "ORD-1004",
-      "landingPageId": "lp-mayaboti-1",
-      "landingPageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
-      "landingPageSlug": "mayaboti-dress",
-      "customerName": "তানভীর আহমেদ",
-      "customerPhone": "01711234567",
-      "customerAddress": "বাসা #১২, রোড #৪, মিরপুর-১০, ঢাকা",
+      "id": "ORD-1006",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test rayhan",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
       "items": [
         {
-          "variantId": "prod-blue",
-          "variantName": "রয়্যাল ব্লু (Royal Blue)",
-          "size": "৪০",
-          "long": "৪২",
+          "variantId": "prod-store-6",
+          "variantName": "জেনুইন লেদার ওয়ালেট ও বেল্ট গিফট বক্স কম্বো",
+          "size": "স্ট্যান্ডার্ড",
+          "long": "",
+          "customSelections": {
+            "সাইজ": "স্ট্যান্ডার্ড"
+          },
           "quantity": 1,
-          "unitPrice": 999,
-          "subtotal": 999,
-          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&q=80"
+          "unitPrice": 850,
+          "subtotal": 850,
+          "image": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&q=80"
         }
       ],
       "deliveryLocation": "inside_dhaka",
-      "deliveryCharge": 0,
-      "subtotal": 999,
-      "grandTotal": 999,
-      "status": "pending",
-      "createdAt": "2026-09-15T09:40:00.000Z",
-      "notes": "কল দিয়ে নিশ্চিত করে পাঠাবেন।"
-    },
-    {
-      "id": "ORD-1003",
-      "landingPageId": "lp-mayaboti-1",
-      "landingPageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
-      "landingPageSlug": "mayaboti-dress",
-      "customerName": "নাসরিন সুলতানা",
-      "customerPhone": "01823456789",
-      "customerAddress": "ফ্ল্যাট ৪বি, গ্রীন ভ্যালি, জিইসি মোড়, চট্টগ্রাম",
-      "items": [
-        {
-          "variantId": "prod-cream",
-          "variantName": "মেরুন / গাঢ় লাল (Deep Maroon)",
-          "size": "৪২",
-          "quantity": 1,
-          "unitPrice": 999,
-          "subtotal": 999,
-          "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=200&q=80"
-        }
-      ],
-      "deliveryLocation": "outside_dhaka",
-      "deliveryCharge": 0,
-      "subtotal": 999,
-      "grandTotal": 999,
+      "deliveryCharge": 60,
+      "subtotal": 850,
+      "grandTotal": 910,
       "status": "in_courier",
+      "notes": "",
+      "createdAt": "2026-09-24T12:55:17.227Z",
       "courier": {
         "provider": "steadfast",
-        "consignmentId": "ST-984210",
-        "trackingCode": "SF78421BD",
-        "status": "In Transit",
-        "sentAt": "2026-09-14T14:30:00.000Z",
-        "deliveryFee": 120
+        "consignmentId": "300524448",
+        "trackingCode": "SFR260924ST86AC42FBD",
+        "status": "in_review",
+        "sentAt": "2026-09-24T13:17:29.030Z",
+        "deliveryFee": 60,
+        "note": "Handle with care"
       },
       "smsLogs": [
         {
-          "id": "sms-1",
-          "sentAt": "2026-09-14T14:35:00.000Z",
-          "phone": "01823456789",
-          "message": "প্রিয় নাসরিন সুলতানা, আপনার অর্ডারটি Steadfast কুরিয়ারে বুকিং দেওয়া হয়েছে। ট্র্যাকিং কোড: SF78421BD। পণ্য বুঝে নিয়ে মূল্য পরিশোধ করুন। - AmarChoice",
-          "status": "sent"
+          "id": "sms-1790255849397",
+          "sentAt": "2026-09-24T13:17:29.397Z",
+          "phone": "01791045497",
+          "message": "প্রিয় test rayhan, আপনার পার্সেলটি Steadfast Courier কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: SFR260924ST86AC42FBD।",
+          "status": "sent",
+          "gatewayResponse": "SMS Submitted Successfully 2"
         }
       ],
-      "createdAt": "2026-09-14T11:15:00.000Z",
-      "notes": "বিকেল ৪টার পর ডেলিভারি দিতে অনুরোধ।"
+      "serialNumber": 6,
+      "legacyId": "ORD-846870"
+    },
+    {
+      "id": "ORD-1005",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test rayhan",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "items": [
+        {
+          "variantId": "prod-store-5",
+          "variantName": "প্রিমিয়াম ব্লুটুথ কলিং আল্ট্রা স্মার্টওয়াচ",
+          "size": "স্ট্যান্ডার্ড সাইজ",
+          "long": "",
+          "customSelections": {
+            "সাইজ": "স্ট্যান্ডার্ড সাইজ"
+          },
+          "quantity": 1,
+          "unitPrice": 1690,
+          "subtotal": 1690,
+          "image": "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "inside_dhaka",
+      "deliveryCharge": 60,
+      "subtotal": 1690,
+      "grandTotal": 1750,
+      "status": "in_courier",
+      "notes": "",
+      "createdAt": "2026-09-24T12:53:06.760Z",
+      "courier": {
+        "provider": "steadfast",
+        "consignmentId": "300523629",
+        "trackingCode": "SFR260924STEB785CABD",
+        "status": "in_review",
+        "sentAt": "2026-09-24T13:16:40.483Z",
+        "deliveryFee": 60,
+        "note": "Handle with care"
+      },
+      "smsLogs": [
+        {
+          "id": "sms-1790255800864",
+          "sentAt": "2026-09-24T13:16:40.864Z",
+          "phone": "01791045497",
+          "message": "প্রিয় test rayhan, আপনার পার্সেলটি Steadfast Courier কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: SFR260924STEB785CABD।",
+          "status": "sent",
+          "gatewayResponse": "SMS Submitted Successfully 2"
+        }
+      ],
+      "serialNumber": 5,
+      "legacyId": "ORD-270225"
+    },
+    {
+      "id": "ORD-1004",
+      "serialNumber": 4,
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-6",
+          "variantName": "জেনুইন লেদার ওয়ালেট ও বেল্ট গিফট বক্স কম্বো",
+          "size": "স্ট্যান্ডার্ড",
+          "long": "",
+          "customSelections": {
+            "সাইজ": "স্ট্যান্ডার্ড"
+          },
+          "quantity": 1,
+          "unitPrice": 850,
+          "subtotal": 850,
+          "image": "https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "inside_dhaka",
+      "deliveryCharge": 60,
+      "subtotal": 850,
+      "grandTotal": 910,
+      "status": "in_courier",
+      "createdAt": "2026-09-24T12:45:37.258Z",
+      "notes": "",
+      "smsLogs": [
+        {
+          "id": "sms-1790253984400",
+          "sentAt": "2026-09-24T12:46:24.400Z",
+          "phone": "01791045497",
+          "message": "প্রিয় test, আপনার পার্সেলটি Steadfast Courier কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: SFR260924STA71594FBD।",
+          "status": "failed",
+          "gatewayResponse": "{\"response_code\":1032,\"success_message\":\"\",\"error_message\":\"Your ip 34.96.48.88 not Whitelisted. Please whitelist ip from Phonebook\"}"
+        },
+        {
+          "id": "sms-1790253937449",
+          "sentAt": "2026-09-24T12:45:37.449Z",
+          "phone": "01791045497",
+          "message": "প্রিয় test, AmarChoice Store-এ আপনার অর্ডার #ORD-960454 গ্রহণ করা হয়েছে। মোট বিল: 910৳। আমাদের টিম দ্রুত যোগাযোগ করবে।",
+          "status": "failed",
+          "gatewayResponse": "{\"response_code\":1032,\"success_message\":\"\",\"error_message\":\"Your ip 34.96.48.88 not Whitelisted. Please whitelist ip from Phonebook\"}"
+        }
+      ],
+      "courier": {
+        "provider": "steadfast",
+        "consignmentId": "300499708",
+        "trackingCode": "SFR260924STA71594FBD",
+        "status": "in_review",
+        "sentAt": "2026-09-24T12:46:24.227Z",
+        "deliveryFee": 60,
+        "note": "Handle with care"
+      },
+      "legacyId": "ORD-960454"
+    },
+    {
+      "id": "ORD-1003",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test store",
+      "customerPhone": "01845319477",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-3",
+          "variantName": "পিওর সফট জর্জেট এমব্রয়ডারি পার্টি শাড়ি",
+          "size": "১২ হাত উইথ ব্লাউজপিস",
+          "customSelections": {
+            "সাইজ": "১২ হাত উইথ ব্লাউজপিস"
+          },
+          "quantity": 1,
+          "unitPrice": 2350,
+          "subtotal": 2350,
+          "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "outside_dhaka",
+      "deliveryCharge": 120,
+      "subtotal": 2350,
+      "grandTotal": 2470,
+      "status": "in_courier",
+      "createdAt": "2026-09-24T12:00:00.000Z",
+      "notes": "",
+      "courier": {
+        "provider": "steadfast",
+        "consignmentId": "300497179",
+        "trackingCode": "SFR260924STB34AD09BD",
+        "status": "in_review",
+        "sentAt": "2026-09-24T12:43:54.611Z",
+        "deliveryFee": 120,
+        "note": "Handle with care"
+      },
+      "smsLogs": [
+        {
+          "id": "sms-1790253835121",
+          "sentAt": "2026-09-24T12:43:55.121Z",
+          "phone": "01845319477",
+          "message": "প্রিয় test store, আপনার পার্সেলটি Steadfast Courier কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: SFR260924STB34AD09BD।",
+          "status": "failed",
+          "gatewayResponse": "{\"response_code\":1032,\"success_message\":\"\",\"error_message\":\"Your ip 34.96.48.88 not Whitelisted. Please whitelist ip from Phonebook\"}"
+        }
+      ],
+      "serialNumber": 3,
+      "legacyId": "ORD-9662"
     },
     {
       "id": "ORD-1002",
-      "landingPageId": "lp-smartwatch-2",
-      "landingPageTitle": "আল্ট্রা স্মার্টওয়াচ সিরিজ ৯ – প্রিমিয়াম ব্লুটুথ কলিং ঘড়ি",
-      "landingPageSlug": "luxury-smartwatch",
-      "customerName": "সাকিব হাসান",
-      "customerPhone": "01934567890",
-      "customerAddress": "হাউজ ২১, রোড ১, উপশহর, রাজশাহী",
+      "landingPageId": "lp-1789981403089",
+      "landingPageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "landingPageSlug": "1test-page",
+      "customerName": "Rayhan Bepari",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
       "items": [
         {
-          "variantId": "prod-watch-black",
-          "variantName": "ম্যাট ব্ল্যাক এডিশন (Matte Black)",
-          "size": "Standard 49mm",
+          "variantId": "prod-1789981372443-1",
+          "variantName": "রয়্যাল ব্লু (Royal Blue)",
+          "size": "৪৬",
+          "customSelections": {
+            "বডি সাইজ": "৪৬"
+          },
           "quantity": 1,
-          "unitPrice": 1550,
-          "subtotal": 1550,
-          "image": "https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=200&q=80"
+          "unitPrice": 999,
+          "subtotal": 999,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80"
         }
       ],
-      "deliveryLocation": "outside_dhaka",
-      "deliveryCharge": 130,
-      "subtotal": 1550,
-      "grandTotal": 1680,
-      "status": "delivered",
+      "deliveryLocation": "inside_dhaka",
+      "deliveryCharge": 60,
+      "subtotal": 999,
+      "grandTotal": 1059,
+      "status": "in_courier",
+      "notes": "",
+      "createdAt": "2026-09-23T07:42:56.435Z",
       "courier": {
-        "provider": "pathao",
-        "consignmentId": "PTH-552190",
-        "trackingCode": "PTH-LK99201",
-        "status": "Delivered",
-        "sentAt": "2026-09-12T10:00:00.000Z",
-        "deliveryFee": 130
+        "provider": "steadfast",
+        "consignmentId": "300497475",
+        "trackingCode": "SFR260924ST40B5A02BD",
+        "status": "in_review",
+        "sentAt": "2026-09-24T12:44:13.207Z",
+        "deliveryFee": 60,
+        "note": "Handle with care"
       },
-      "createdAt": "2026-09-11T16:20:00.000Z"
+      "smsLogs": [
+        {
+          "id": "sms-1790253853427",
+          "sentAt": "2026-09-24T12:44:13.427Z",
+          "phone": "01791045497",
+          "message": "প্রিয় Rayhan Bepari, আপনার পার্সেলটি Steadfast Courier কুরিয়ারে বুক করা হয়েছে। ট্র্যাকিং কোড: SFR260924ST40B5A02BD। - AmarChoice",
+          "status": "failed",
+          "gatewayResponse": "{\"response_code\":1032,\"success_message\":\"\",\"error_message\":\"Your ip 34.96.48.88 not Whitelisted. Please whitelist ip from Phonebook\"}"
+        }
+      ],
+      "serialNumber": 2,
+      "legacyId": "ORD-960453"
     },
     {
       "id": "ORD-1001",
-      "landingPageId": "lp-mayaboti-1",
-      "landingPageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
-      "landingPageSlug": "mayaboti-dress",
-      "customerName": "ফাতেমা আক্তার",
-      "customerPhone": "01556789012",
-      "customerAddress": "বাড়ি ৫৬, রোড ২৭, ধানমন্ডি, ঢাকা",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "store",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
       "items": [
         {
-          "variantId": "prod-blue",
-          "variantName": "রয়্যাল ব্লু (Royal Blue)",
-          "size": "৩৮",
-          "quantity": 2,
-          "unitPrice": 999,
-          "subtotal": 1998,
-          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&q=80"
-        }
-      ],
-      "deliveryLocation": "inside_dhaka",
-      "deliveryCharge": 0,
-      "subtotal": 1998,
-      "grandTotal": 1998,
-      "status": "confirmed",
-      "createdAt": "2026-09-13T18:00:00.000Z"
-    },
-    {
-      "id": "ORD-0998",
-      "landingPageId": "lp-mayaboti-1",
-      "landingPageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
-      "landingPageSlug": "mayaboti-dress",
-      "customerName": "তানভীর আহমেদ",
-      "customerPhone": "01711234567",
-      "customerAddress": "বাসা #১২, রোড #৪, মিরপুর-১০, ঢাকা",
-      "items": [
-        {
-          "variantId": "prod-blue",
-          "variantName": "রয়্যাল ব্লু (Royal Blue)",
+          "variantId": "prod-store-2",
+          "variantName": "প্রিমিয়াম প্রিমিয়াম কটন সেমি-লং কাবলি পাঞ্জাবি",
           "size": "৪০",
+          "long": "৪০",
+          "customSelections": {
+            "সাইজ": "৪০",
+            "লং": "৪০"
+          },
           "quantity": 1,
-          "unitPrice": 999,
-          "subtotal": 999
-        }
-      ],
-      "deliveryLocation": "inside_dhaka",
-      "deliveryCharge": 0,
-      "subtotal": 999,
-      "grandTotal": 999,
-      "status": "delivered",
-      "courier": {
-        "provider": "steadfast",
-        "consignmentId": "ST-881230",
-        "trackingCode": "SF66201BD",
-        "status": "Delivered",
-        "sentAt": "2026-09-08T10:00:00.000Z",
-        "deliveryFee": 60
-      },
-      "createdAt": "2026-09-07T14:30:00.000Z"
-    },
-    {
-      "id": "ORD-0985",
-      "landingPageId": "lp-mayaboti-1",
-      "landingPageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
-      "landingPageSlug": "mayaboti-dress",
-      "customerName": "তানভীর আহমেদ",
-      "customerPhone": "01711234567",
-      "customerAddress": "বাসা #১২, রোড #৪, মিরপুর-১০, ঢাকা",
-      "items": [
-        {
-          "variantId": "prod-cream",
-          "variantName": "মেরুন / গাঢ় লাল (Deep Maroon)",
-          "size": "৪২",
-          "quantity": 1,
-          "unitPrice": 999,
-          "subtotal": 999
-        }
-      ],
-      "deliveryLocation": "inside_dhaka",
-      "deliveryCharge": 0,
-      "subtotal": 999,
-      "grandTotal": 999,
-      "status": "cancelled",
-      "notes": "কাস্টমার বাইরে থাকায় অর্ডার বাতিল করেছেন।",
-      "createdAt": "2026-08-25T11:00:00.000Z"
-    },
-    {
-      "id": "ORD-0992",
-      "landingPageId": "lp-smartwatch-2",
-      "landingPageTitle": "আল্ট্রা স্মার্টওয়াচ সিরিজ ৯ – প্রিমিয়াম ব্লুটুথ কলিং ঘড়ি",
-      "landingPageSlug": "luxury-smartwatch",
-      "customerName": "সাকিব হাসান",
-      "customerPhone": "01934567890",
-      "customerAddress": "হাউজ ২১, রোড ১, উপশহর, রাজশাহী",
-      "items": [
-        {
-          "variantId": "prod-watch-black",
-          "variantName": "ম্যাট ব্ল্যাক এডিশন (Matte Black)",
-          "size": "Standard 49mm",
-          "quantity": 1,
-          "unitPrice": 1550,
-          "subtotal": 1550
+          "unitPrice": 1190,
+          "subtotal": 1190,
+          "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80"
         }
       ],
       "deliveryLocation": "outside_dhaka",
-      "deliveryCharge": 130,
-      "subtotal": 1550,
-      "grandTotal": 1680,
-      "status": "delivered",
+      "deliveryCharge": 120,
+      "subtotal": 1190,
+      "grandTotal": 1310,
+      "status": "in_courier",
+      "createdAt": "2026-09-22T07:55:43.397Z",
+      "notes": "",
+      "smsLogs": [
+        {
+          "id": "sms-1790063782745",
+          "sentAt": "2026-09-22T07:56:22.745Z",
+          "phone": "01791045497",
+          "message": "প্রিয় store, আপনার পার্সেলটি Steadfast Courier কুরিয়ারে বুকিং সম্পন্ন হয়েছে। ট্র্যাকিং কোড: SFR260922ST560A93DBD।",
+          "status": "failed",
+          "gatewayResponse": "{\"response_code\":1032,\"success_message\":\"\",\"error_message\":\"Your ip 34.34.254.178 not Whitelisted. Please whitelist ip from Phonebook\"}"
+        },
+        {
+          "id": "sms-1790063743885",
+          "sentAt": "2026-09-22T07:55:43.885Z",
+          "phone": "01791045497",
+          "message": "প্রিয় store, AmarChoice Store-এ আপনার অর্ডার #ORD-2932 গ্রহণ করা হয়েছে। মোট বিল: 1310৳। আমাদের টিম দ্রুত যোগাযোগ করবে।",
+          "status": "failed",
+          "gatewayResponse": "{\"response_code\":1032,\"success_message\":\"\",\"error_message\":\"Your ip 34.34.254.178 not Whitelisted. Please whitelist ip from Phonebook\"}"
+        }
+      ],
       "courier": {
-        "provider": "pathao",
-        "consignmentId": "PTH-441200",
-        "trackingCode": "PTH-LK88120",
-        "status": "Delivered",
-        "sentAt": "2026-08-30T10:00:00.000Z",
-        "deliveryFee": 130
+        "provider": "steadfast",
+        "consignmentId": "299522900",
+        "trackingCode": "SFR260922ST560A93DBD",
+        "status": "in_review",
+        "sentAt": "2026-09-22T07:56:22.554Z",
+        "deliveryFee": 120,
+        "note": "Handle with care"
       },
-      "createdAt": "2026-08-28T16:00:00.000Z"
+      "serialNumber": 1,
+      "legacyId": "ORD-2932"
     }
   ],
   "settings": {
     "steadfast": {
-      "apiKey": "st_live_67823ab912e847c",
-      "secretKey": "st_sec_991823746152",
-      "baseUrl": "https://portal.steadfast.com.bd/api/v1",
+      "apiKey": "ogfk1tda7me85cwf241lwkxvre7qnfir",
+      "secretKey": "x2egzrcl6hcqkl3mgq8ii7jn",
+      "baseUrl": "https://portal.packzy.com/api/v1",
       "isEnabled": true,
-      "sandboxMode": true
+      "sandboxMode": false
     },
     "pathao": {
       "clientId": "pathao_cid_98124",
@@ -626,14 +873,14 @@
       "username": "merchant@amarchoice.com",
       "password": "merchant_pass_secure",
       "storeId": "STR-44812",
-      "isEnabled": true,
-      "sandboxMode": true
+      "isEnabled": false,
+      "sandboxMode": false
     },
     "smsGateway": {
-      "provider": "greenweb",
-      "apiKey": "gw_auth_token_8891234",
-      "senderId": "AmarChoice",
-      "apiUrl": "https://api.greenweb.com.bd/api.php",
+      "provider": "bulksmsbd",
+      "apiKey": "hGlJXdFmi2mkkTELZ2rA",
+      "senderId": "8809617628579",
+      "apiUrl": "http://bulksmsbd.net/api/smsapi",
       "isEnabled": true,
       "templates": {
         "orderReceived": "প্রিয় {customer_name}, আপনার অর্ডারটি (#{order_id}) AmarChoice-এ গ্রহণ করা হয়েছে। মোট মূল্য: {total}৳। প্রতিনিধি শীঘ্রই যোগাযোগ করবেন।",
@@ -643,7 +890,7 @@
       }
     },
     "globalPixelId": "984512398471201",
-    "defaultLandingPageId": "lp-mayaboti-1",
+    "defaultLandingPageId": "lp-ecommerce-store-3",
     "fraudControl": {
       "enableDailyLimit": true,
       "maxOrdersPerDay": 2,
@@ -651,6 +898,16 @@
       "enableIpBlocking": true,
       "blockDurationDays": 30,
       "blockedPhones": [
+        {
+          "id": "blk-1790254387060",
+          "phone": "01791045497",
+          "ip": "203.99.145.181",
+          "name": "test rayhan",
+          "reason": "দৈনিক অর্ডারের সর্বোচ্চ সীমা (2টি) অতিক্রম করায় সিস্টেম স্বয়ংক্রিয়ভাবে ফোন ও আইপি ব্লক করেছে",
+          "blockedAt": "2026-09-24T12:53:07.060Z",
+          "blockedBy": "system",
+          "orderCountToday": 3
+        },
         {
           "id": "blk-1",
           "phone": "01700999888",
@@ -663,6 +920,16 @@
         }
       ],
       "blockedIps": [
+        {
+          "id": "ip-1790254387061",
+          "ip": "203.99.145.181",
+          "associatedPhone": "01791045497",
+          "name": "test rayhan",
+          "reason": "দৈনিক অর্ডারের সর্বোচ্চ সীমা (2টি) অতিক্রম করায় সিস্টেম স্বয়ংক্রিয়ভাবে আইপি ব্লক করেছে",
+          "blockedAt": "2026-09-24T12:53:07.061Z",
+          "blockedBy": "system",
+          "orderCountToday": 3
+        },
         {
           "id": "ip-blk-1",
           "ip": "103.205.71.18",
@@ -678,12 +945,12 @@
   },
   "pixelLogs": [
     {
-      "id": "px-test-1789636617623",
-      "timestamp": "2026-09-17T09:16:57.623Z",
-      "eventName": "Purchase",
-      "pixelId": "984512398471201",
-      "eventId": "test_ev_1789636617622",
-      "pageTitle": "🛠️ Test Ping Event",
+      "id": "px-1790254617313-9lwf",
+      "timestamp": "2026-09-24T12:56:57.313Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254616778_1iwbbck",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
       "channels": [
         "facebook_pixel"
       ],
@@ -694,17 +961,369 @@
         }
       },
       "data": {
-        "value": 1250,
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790254617310-0u8h",
+      "timestamp": "2026-09-24T12:56:57.310Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254616764_kxfojiw",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790254517733-kikt",
+      "timestamp": "2026-09-24T12:55:17.733Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254517242_f9kwsd5",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "orderId": "ORD-846870",
+        "value": 910,
         "currency": "BDT",
-        "note": "Manual Test Event from Admin"
+        "num_items": 1
       }
     },
     {
-      "id": "px-1789635908113",
-      "timestamp": "2026-09-17T09:05:08.113Z",
+      "id": "px-1790254517729-8crs",
+      "timestamp": "2026-09-24T12:55:17.729Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254517229_jg70a7b",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "value": 910,
+        "currency": "BDT",
+        "orderId": "ORD-846870",
+        "itemsCount": 1
+      }
+    },
+    {
+      "id": "px-1790254387293-c36v",
+      "timestamp": "2026-09-24T12:53:07.293Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254386765_78pixva",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "orderId": "ORD-270225",
+        "value": 1750,
+        "currency": "BDT",
+        "num_items": 1
+      }
+    },
+    {
+      "id": "px-1790254387231-r5f9",
+      "timestamp": "2026-09-24T12:53:07.231Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254386760_qm1hlno",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "value": 1750,
+        "currency": "BDT",
+        "orderId": "ORD-270225",
+        "itemsCount": 1
+      }
+    },
+    {
+      "id": "px-1790254350506-up6z",
+      "timestamp": "2026-09-24T12:52:30.506Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254347767_iye4qwi",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790254349767-4ubg",
+      "timestamp": "2026-09-24T12:52:29.767Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254347759_5r39320",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790254201188-o7d9",
+      "timestamp": "2026-09-24T12:50:01.188Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254200694_6xk1my5",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790254201153-zix3",
+      "timestamp": "2026-09-24T12:50:01.153Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790254200683_kce719b",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790253937761-y9nd",
+      "timestamp": "2026-09-24T12:45:37.761Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790253937320_2fgkpnu",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "orderId": "ORD-960454",
+        "value": 910,
+        "currency": "BDT",
+        "num_items": 1
+      }
+    },
+    {
+      "id": "px-1790253937749-602f",
+      "timestamp": "2026-09-24T12:45:37.749Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790253937313_4s77sk9",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "value": 910,
+        "currency": "BDT",
+        "orderId": "ORD-960454",
+        "itemsCount": 1
+      }
+    },
+    {
+      "id": "px-1790253920366-dxtt",
+      "timestamp": "2026-09-24T12:45:20.366Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790253919863_trgvbf5",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790253920362-st1r",
+      "timestamp": "2026-09-24T12:45:20.362Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790253919877_joo4ykf",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790253746204-nis1",
+      "timestamp": "2026-09-24T12:42:26.204Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790253745773_fh7sf2k",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790253746143-mnro",
+      "timestamp": "2026-09-24T12:42:26.143Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790253745719_fmmm1iv",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790253745698-0kvd",
+      "timestamp": "2026-09-24T12:42:25.698Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790253744685_5sq4iak",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -712,11 +1331,27 @@
       }
     },
     {
-      "id": "px-1789635908010",
-      "timestamp": "2026-09-17T09:05:08.010Z",
+      "id": "px-1790253745694-n9w1",
+      "timestamp": "2026-09-24T12:42:25.694Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790253744680_4g0pqr1",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -724,11 +1359,71 @@
       }
     },
     {
-      "id": "px-1789635907870",
-      "timestamp": "2026-09-17T09:05:07.870Z",
+      "id": "px-1790252893316-n98p",
+      "timestamp": "2026-09-24T12:28:13.316Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790252892993_s1dhrfy",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790252893143-eoqd",
+      "timestamp": "2026-09-24T12:28:13.143Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790252892797_k5g9hn2",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790252892962-7bwy",
+      "timestamp": "2026-09-24T12:28:12.962Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790252891559_e5st3aj",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -736,11 +1431,27 @@
       }
     },
     {
-      "id": "px-1789635907846",
-      "timestamp": "2026-09-17T09:05:07.846Z",
+      "id": "px-1790252892926-0gty",
+      "timestamp": "2026-09-24T12:28:12.926Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790252891550_0h1r4x2",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -748,11 +1459,115 @@
       }
     },
     {
-      "id": "px-1789635278591",
-      "timestamp": "2026-09-17T08:54:38.591Z",
+      "id": "px-1790068453973-yaa7",
+      "timestamp": "2026-09-22T09:14:13.973Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790068452373_vp76gje",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790068453970-o2kw",
+      "timestamp": "2026-09-22T09:14:13.970Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790068452364_mr5dlif",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790067492569-t8se",
+      "timestamp": "2026-09-22T08:58:12.569Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790067491176_b0rz3mz",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790067492461-y2gh",
+      "timestamp": "2026-09-22T08:58:12.461Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790067491099_7hxi6m2",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790067492255-g63v",
+      "timestamp": "2026-09-22T08:58:12.255Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790067490448_s6p5j4b",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -760,11 +1575,27 @@
       }
     },
     {
-      "id": "px-1789635278500",
-      "timestamp": "2026-09-17T08:54:38.500Z",
+      "id": "px-1790067492219-g933",
+      "timestamp": "2026-09-22T08:58:12.219Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790067490445_l7ol3v0",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -772,11 +1603,71 @@
       }
     },
     {
-      "id": "px-1789635278331",
-      "timestamp": "2026-09-17T08:54:38.331Z",
+      "id": "px-1790067092759-7xdn",
+      "timestamp": "2026-09-22T08:51:32.759Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790067091418_5ooljun",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790067092635-6apn",
+      "timestamp": "2026-09-22T08:51:32.635Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790067091302_1o2x7gs",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790067092452-49dy",
+      "timestamp": "2026-09-22T08:51:32.452Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790067090584_8c8iqp2",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -784,11 +1675,27 @@
       }
     },
     {
-      "id": "px-1789635278310",
-      "timestamp": "2026-09-17T08:54:38.310Z",
+      "id": "px-1790067092429-6yvp",
+      "timestamp": "2026-09-22T08:51:32.429Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790067090576_5gp4q1e",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -796,11 +1703,71 @@
       }
     },
     {
-      "id": "px-1789635064362",
-      "timestamp": "2026-09-17T08:51:04.362Z",
+      "id": "px-1790066804276-r6os",
+      "timestamp": "2026-09-22T08:46:44.276Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790066802969_5o9k8mp",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790066804212-okr9",
+      "timestamp": "2026-09-22T08:46:44.212Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790066802895_x4g5v4s",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790066803950-1yjz",
+      "timestamp": "2026-09-22T08:46:43.950Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790066801901_7ccn3of",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -808,11 +1775,27 @@
       }
     },
     {
-      "id": "px-1789635064323",
-      "timestamp": "2026-09-17T08:51:04.323Z",
+      "id": "px-1790066803909-hfgn",
+      "timestamp": "2026-09-22T08:46:43.909Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790066801898_ubocuk3",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -820,11 +1803,115 @@
       }
     },
     {
-      "id": "px-1789634294553",
-      "timestamp": "2026-09-17T08:38:14.553Z",
+      "id": "px-1790065292165-3gd6",
+      "timestamp": "2026-09-22T08:21:32.165Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790065290808_jvkt87n",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790065292125-nofn",
+      "timestamp": "2026-09-22T08:21:32.125Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790065290815_vzxesr5",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790065016657-0oec",
+      "timestamp": "2026-09-22T08:16:56.657Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790065015493_fcylmkt",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790065016556-e8bb",
+      "timestamp": "2026-09-22T08:16:56.556Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790065015394_4vgfhc8",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790065016379-0fak",
+      "timestamp": "2026-09-22T08:16:56.379Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790065015141_meiarmn",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -832,11 +1919,27 @@
       }
     },
     {
-      "id": "px-1789634294454",
-      "timestamp": "2026-09-17T08:38:14.454Z",
+      "id": "px-1790065016331-3q09",
+      "timestamp": "2026-09-22T08:16:56.331Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790065015137_7b2qbvp",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -844,11 +1947,71 @@
       }
     },
     {
-      "id": "px-1789634294305",
-      "timestamp": "2026-09-17T08:38:14.305Z",
+      "id": "px-1790064623745-w49m",
+      "timestamp": "2026-09-22T08:10:23.745Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064622587_68qmqk5",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064623640-turl",
+      "timestamp": "2026-09-22T08:10:23.641Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064622486_ec0mvif",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064623425-2xym",
+      "timestamp": "2026-09-22T08:10:23.425Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064621752_cu3ul3o",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -856,11 +2019,27 @@
       }
     },
     {
-      "id": "px-1789634294275",
-      "timestamp": "2026-09-17T08:38:14.275Z",
+      "id": "px-1790064623421-fwrt",
+      "timestamp": "2026-09-22T08:10:23.421Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064621755_j55ds84",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -868,11 +2047,71 @@
       }
     },
     {
-      "id": "px-1789633337718",
-      "timestamp": "2026-09-17T08:22:17.718Z",
+      "id": "px-1790064611933-qxt6",
+      "timestamp": "2026-09-22T08:10:11.933Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064610776_pil4ekn",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064611832-46nh",
+      "timestamp": "2026-09-22T08:10:11.832Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064610678_netxfxf",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064611567-ytjy",
+      "timestamp": "2026-09-22T08:10:11.567Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064610402_b40cnm0",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -880,11 +2119,27 @@
       }
     },
     {
-      "id": "px-1789633337625",
-      "timestamp": "2026-09-17T08:22:17.625Z",
+      "id": "px-1790064611562-ynwk",
+      "timestamp": "2026-09-22T08:10:11.562Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064610399_qwq30wr",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -892,11 +2147,71 @@
       }
     },
     {
-      "id": "px-1789633337478",
-      "timestamp": "2026-09-17T08:22:17.478Z",
+      "id": "px-1790064611036-o3be",
+      "timestamp": "2026-09-22T08:10:11.036Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064609876_w82f43v",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064610940-m5v2",
+      "timestamp": "2026-09-22T08:10:10.940Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064609765_nx1njos",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064610674-gxdb",
+      "timestamp": "2026-09-22T08:10:10.674Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064608851_cvvsthm",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -904,11 +2219,27 @@
       }
     },
     {
-      "id": "px-1789633337454",
-      "timestamp": "2026-09-17T08:22:17.454Z",
+      "id": "px-1790064610655-mnot",
+      "timestamp": "2026-09-22T08:10:10.655Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064608848_krmqyu9",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -916,11 +2247,71 @@
       }
     },
     {
-      "id": "px-1789632475160",
-      "timestamp": "2026-09-17T08:07:55.160Z",
+      "id": "px-1790064588869-5ost",
+      "timestamp": "2026-09-22T08:09:48.869Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064587721_2twrpx6",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064588824-qq10",
+      "timestamp": "2026-09-22T08:09:48.824Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064587676_1i94dtn",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064588522-vabm",
+      "timestamp": "2026-09-22T08:09:48.522Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064587337_rtr5ae6",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -928,11 +2319,27 @@
       }
     },
     {
-      "id": "px-1789632475015",
-      "timestamp": "2026-09-17T08:07:55.015Z",
+      "id": "px-1790064588518-yv7p",
+      "timestamp": "2026-09-22T08:09:48.518Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064587331_vckl8po",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -940,11 +2347,71 @@
       }
     },
     {
-      "id": "px-1789632474762",
-      "timestamp": "2026-09-17T08:07:54.762Z",
+      "id": "px-1790064569882-2pe2",
+      "timestamp": "2026-09-22T08:09:29.882Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064568732_chkuw9l",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064569748-ayxb",
+      "timestamp": "2026-09-22T08:09:29.748Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064568594_2c2ah6a",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064569463-rxn6",
+      "timestamp": "2026-09-22T08:09:29.463Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064567819_v5kcp16",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -952,11 +2419,944 @@
       }
     },
     {
-      "id": "px-1789632474706",
-      "timestamp": "2026-09-17T08:07:54.706Z",
+      "id": "px-1790064569461-1nsf",
+      "timestamp": "2026-09-22T08:09:29.461Z",
       "eventName": "ViewContent",
       "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790064567823_focfl02",
       "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790064100500-essy",
+      "timestamp": "2026-09-22T08:01:40.500Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064099382_1lka2dw",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "orderId": "ORD-9662",
+        "value": 2470,
+        "currency": "BDT",
+        "num_items": 1
+      }
+    },
+    {
+      "id": "px-1790064100464-nsry",
+      "timestamp": "2026-09-22T08:01:40.464Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064099377_oi9g0h1",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "value": 2470,
+        "currency": "BDT",
+        "orderId": "ORD-9662",
+        "itemsCount": 1
+      }
+    },
+    {
+      "id": "px-1790064078383-eitr",
+      "timestamp": "2026-09-22T08:01:18.383Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064077130_k0u2q9a",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790064078348-9mfz",
+      "timestamp": "2026-09-22T08:01:18.348Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790064077142_witllvx",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790063744035-n59o",
+      "timestamp": "2026-09-22T07:55:44.035Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790063742929_wvliqa7",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "orderId": "ORD-2932",
+        "value": 1310,
+        "currency": "BDT",
+        "num_items": 1
+      }
+    },
+    {
+      "id": "px-1790063744000-j85b",
+      "timestamp": "2026-09-22T07:55:44.000Z",
+      "eventName": "Purchase",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790063742913_oth2hsh",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "value": 1310,
+        "currency": "BDT",
+        "orderId": "ORD-2932",
+        "itemsCount": 1
+      }
+    },
+    {
+      "id": "px-1790063617740-y6tf",
+      "timestamp": "2026-09-22T07:53:37.740Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790063616691_xgnhbum",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790063617610-82p6",
+      "timestamp": "2026-09-22T07:53:37.611Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790063616559_11mzqf1",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790063617443-ehm5",
+      "timestamp": "2026-09-22T07:53:37.443Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790063615981_q580plz",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790063617415-nvh4",
+      "timestamp": "2026-09-22T07:53:37.415Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790063615979_ufsfbol",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790063448607-tofb",
+      "timestamp": "2026-09-22T07:50:48.607Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790063447545_epcyxzf",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790063448567-5f99",
+      "timestamp": "2026-09-22T07:50:48.567Z",
+      "eventName": "ViewContent",
+      "pixelId": "112233445566778",
+      "eventId": "ev_1790063447476_es9fw5d",
+      "pageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-ecommerce-store-3",
+        "title": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+        "price": 1490
+      }
+    },
+    {
+      "id": "px-1790063448172-43xn",
+      "timestamp": "2026-09-22T07:50:48.172Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790063446659_66mizmw",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790063448168-dxts",
+      "timestamp": "2026-09-22T07:50:48.168Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790063446654_rw5mmhq",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790063271761-6vu1",
+      "timestamp": "2026-09-22T07:47:51.761Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790063270738_o69e6va",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790063271668-jzl9",
+      "timestamp": "2026-09-22T07:47:51.668Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790063270627_5fdo5m1",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790063271469-d6um",
+      "timestamp": "2026-09-22T07:47:51.469Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790063269883_5yl5orj",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790063271444-tmsq",
+      "timestamp": "2026-09-22T07:47:51.444Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790063269868_jhqugs5",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790062875552-00zz",
+      "timestamp": "2026-09-22T07:41:15.552Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790062874532_z2nw5f9",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790062875383-xsw5",
+      "timestamp": "2026-09-22T07:41:15.383Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790062874323_p0jtf08",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790062875157-voox",
+      "timestamp": "2026-09-22T07:41:15.157Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790062872822_qins16j",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790062875110-03ok",
+      "timestamp": "2026-09-22T07:41:15.110Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790062872807_3bennz3",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790014954207-o2r7",
+      "timestamp": "2026-09-21T18:22:34.207Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790014953824_lsawxai",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790014954205-3lzi",
+      "timestamp": "2026-09-21T18:22:34.205Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790014953815_sfvu670",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790014954170-rtla",
+      "timestamp": "2026-09-21T18:22:34.170Z",
+      "eventName": "PageView",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790014953779_kpqmc2a",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "slug": "mayaboti-dress"
+      }
+    },
+    {
+      "id": "px-1790014639347-bfs8",
+      "timestamp": "2026-09-21T18:17:19.347Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790014639033_kykpkel",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790014639235-bw9p",
+      "timestamp": "2026-09-21T18:17:19.235Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790014638926_jlti0rm",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790014639085-vi3w",
+      "timestamp": "2026-09-21T18:17:19.085Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790014638303_tm49ewx",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790014639062-mhpz",
+      "timestamp": "2026-09-21T18:17:19.062Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790014638299_gogicgl",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790013168345-bz76",
+      "timestamp": "2026-09-21T17:52:48.345Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790013167953_m6dtifl",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790013168303-6kvd",
+      "timestamp": "2026-09-21T17:52:48.303Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790013167975_8a7pvg3",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790011818448-1w36",
+      "timestamp": "2026-09-21T17:30:18.448Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790011818366_psna4br",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790011818355-b9e8",
+      "timestamp": "2026-09-21T17:30:18.355Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1790011818271_ep9yvw4",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790011818114-ko9x",
+      "timestamp": "2026-09-21T17:30:18.114Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790011810260_3fbhz4r",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1790011818086-48vp",
+      "timestamp": "2026-09-21T17:30:18.086Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1790011810255_4fmyw50",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-mayaboti-1",
+        "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1789982330909-ol3a",
+      "timestamp": "2026-09-21T09:18:50.909Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1789982329791_kp74ivb",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1789982330768-pc9u",
+      "timestamp": "2026-09-21T09:18:50.768Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "eventId": "ev_1789982329633_afplyuq",
+      "pageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "channels": [
+        "facebook_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
+      "data": {
+        "pageId": "lp-1789981403089",
+        "title": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+        "price": 999
+      }
+    },
+    {
+      "id": "px-1789982330575-hs9v",
+      "timestamp": "2026-09-21T09:18:50.575Z",
+      "eventName": "ViewContent",
+      "pixelId": "984512398471201",
+      "tiktokPixelId": "CP845210984TT",
+      "eventId": "ev_1789982328807_tzwv003",
+      "pageTitle": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
+      "channels": [
+        "facebook_pixel",
+        "tiktok_pixel"
+      ],
+      "capiStatus": {
+        "meta": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (Meta CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        },
+        "tiktok": {
+          "status": "simulated",
+          "message": "ব্রাউজার পিক্সেল সক্রিয় (TikTok CAPI Token সেট করলে সার্ভার-সাইড ব্যাকআপ সক্রিয় হবে)"
+        }
+      },
       "data": {
         "pageId": "lp-mayaboti-1",
         "title": "নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন",
@@ -965,6 +3365,14 @@
     }
   ],
   "users": [
+    {
+      "id": "user-admin-owner",
+      "name": "মালিক (Owner)",
+      "email": "bmrayhan330@gmail.com",
+      "password": "admin123",
+      "role": "superadmin",
+      "createdAt": "2026-01-01T00:00:00.000Z"
+    },
     {
       "id": "user-admin-1",
       "name": "মালিক / সুপার অ্যাডমিন",
@@ -983,6 +3391,277 @@
     }
   ],
   "incompleteOrders": [
+    {
+      "id": "inc-1790254347718-hw3o",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test rayhan",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-1",
+          "variantName": "দুবাই চেরি সিল্ক প্রিন্সেস আবায়া ও বোরকা",
+          "size": "Standard",
+          "quantity": 1,
+          "unitPrice": 1490,
+          "subtotal": 1490,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "inside_dhaka",
+      "subtotal": 1490,
+      "deliveryCharge": 60,
+      "grandTotal": 1550,
+      "step": "abandoned",
+      "createdAt": "2026-09-24T12:52:45.033Z",
+      "updatedAt": "2026-09-24T12:55:49.608Z",
+      "status": "uncontacted",
+      "notes": "স্টোর পেজ ত্যাগ করার সময় স্বয়ংক্রিয়ভাবে সংগৃহীত লিড"
+    },
+    {
+      "id": "inc-1790254200646-aayw",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test rayhan",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-1",
+          "variantName": "দুবাই চেরি সিল্ক প্রিন্সেস আবায়া ও বোরকা",
+          "size": "Standard",
+          "quantity": 1,
+          "unitPrice": 1490,
+          "subtotal": 1490,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "inside_dhaka",
+      "subtotal": 1490,
+      "deliveryCharge": 60,
+      "grandTotal": 1550,
+      "step": "abandoned",
+      "createdAt": "2026-09-24T12:50:08.766Z",
+      "updatedAt": "2026-09-24T12:50:42.982Z",
+      "status": "uncontacted",
+      "notes": "স্টোর পেজ ত্যাগ করার সময় স্বয়ংক্রিয়ভাবে সংগৃহীত লিড"
+    },
+    {
+      "id": "inc-1790253919825-v4q9",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-1",
+          "variantName": "দুবাই চেরি সিল্ক প্রিন্সেস আবায়া ও বোরকা",
+          "size": "Standard",
+          "quantity": 1,
+          "unitPrice": 1490,
+          "subtotal": 1490,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "inside_dhaka",
+      "subtotal": 1490,
+      "deliveryCharge": 60,
+      "grandTotal": 1550,
+      "step": "abandoned",
+      "createdAt": "2026-09-24T12:45:28.072Z",
+      "updatedAt": "2026-09-24T12:46:10.399Z",
+      "status": "recovered",
+      "notes": "স্টোর পেজ ত্যাগ করার সময় স্বয়ংক্রিয়ভাবে সংগৃহীত লিড"
+    },
+    {
+      "id": "inc-1790068691292",
+      "landingPageId": "test",
+      "landingPageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "landingPageSlug": "1test-page",
+      "customerName": "Test Buyer",
+      "customerPhone": "01712345678",
+      "customerAddress": "Dhaka",
+      "customerIp": "127.0.0.1",
+      "items": [],
+      "deliveryLocation": "inside_dhaka",
+      "subtotal": 1000,
+      "deliveryCharge": 0,
+      "grandTotal": 1060,
+      "step": "details_entered",
+      "createdAt": "2026-09-22T09:18:11.292Z",
+      "updatedAt": "2026-09-22T09:18:11.292Z",
+      "status": "recovered",
+      "notes": "চেকআউট ফর্ম পূরণ করার সময় পেজ ত্যাগ করেছে • অর্ডার সফলভাবে কনফার্ম হয়েছে: #ORD-9923"
+    },
+    {
+      "id": "inc-1790064102990",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test store",
+      "customerPhone": "01845319477",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-1",
+          "variantName": "দুবাই চেরি সিল্ক প্রিন্সেস আবায়া ও বোরকা",
+          "size": "Standard",
+          "quantity": 1,
+          "unitPrice": 1490,
+          "subtotal": 1490,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "outside_dhaka",
+      "subtotal": 1490,
+      "deliveryCharge": 120,
+      "grandTotal": 1610,
+      "step": "address_entered",
+      "createdAt": "2026-09-22T08:01:42.990Z",
+      "updatedAt": "2026-09-22T08:09:22.426Z",
+      "status": "uncontacted",
+      "notes": "ই-কমার্স স্টোর চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি"
+    },
+    {
+      "id": "inc-1790064096356",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test store",
+      "customerPhone": "01845319477",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-3",
+          "variantName": "পিওর সফট জর্জেট এমব্রয়ডারি পার্টি শাড়ি",
+          "size": "১২ হাত উইথ ব্লাউজপিস",
+          "customSelections": {
+            "সাইজ": "১২ হাত উইথ ব্লাউজপিস"
+          },
+          "quantity": 1,
+          "unitPrice": 2350,
+          "subtotal": 2350,
+          "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "outside_dhaka",
+      "subtotal": 2350,
+      "deliveryCharge": 120,
+      "grandTotal": 2470,
+      "step": "address_entered",
+      "createdAt": "2026-09-22T08:01:36.356Z",
+      "updatedAt": "2026-09-22T08:01:39.601Z",
+      "status": "recovered",
+      "notes": "ই-কমার্স স্টোর চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি • অর্ডার সফলভাবে কনফার্ম হয়েছে: #ORD-9662"
+    },
+    {
+      "id": "inc-1790063750865",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "test incpm",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-1",
+          "variantName": "দুবাই চেরি সিল্ক প্রিন্সেস আবায়া ও বোরকা",
+          "size": "Standard",
+          "quantity": 1,
+          "unitPrice": 1490,
+          "subtotal": 1490,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "outside_dhaka",
+      "subtotal": 1490,
+      "deliveryCharge": 120,
+      "grandTotal": 1610,
+      "step": "address_entered",
+      "createdAt": "2026-09-22T07:55:50.865Z",
+      "updatedAt": "2026-09-22T09:15:11.439Z",
+      "status": "recovered",
+      "notes": "ই-কমার্স স্টোর চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি • অর্ডার সফলভাবে কনফার্ম হয়েছে: #ORD-960454"
+    },
+    {
+      "id": "inc-1790063739346",
+      "landingPageId": "lp-ecommerce-store-3",
+      "landingPageTitle": "AmarChoice ফ্যাশন ও লাইফস্টাইল ই-কমার্স শপ",
+      "landingPageSlug": "fashion-store",
+      "customerName": "store",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-store-2",
+          "variantName": "প্রিমিয়াম প্রিমিয়াম কটন সেমি-লং কাবলি পাঞ্জাবি",
+          "size": "৪০",
+          "long": "৪০",
+          "customSelections": {
+            "সাইজ": "৪০",
+            "লং": "৪০"
+          },
+          "quantity": 1,
+          "unitPrice": 1190,
+          "subtotal": 1190,
+          "image": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "outside_dhaka",
+      "subtotal": 1190,
+      "deliveryCharge": 120,
+      "grandTotal": 1310,
+      "step": "address_entered",
+      "createdAt": "2026-09-22T07:55:39.346Z",
+      "updatedAt": "2026-09-22T07:55:43.240Z",
+      "status": "recovered",
+      "notes": "ই-কমার্স স্টোর চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি • অর্ডার সফলভাবে কনফার্ম হয়েছে: #ORD-2932"
+    },
+    {
+      "id": "inc-1790013190984",
+      "landingPageId": "lp-1789981403089",
+      "landingPageTitle": "নতুন প্রোডাক্ট ল্যান্ডিং পেইজ",
+      "landingPageSlug": "1test-page",
+      "customerName": "incomplete",
+      "customerPhone": "01791045497",
+      "customerAddress": "dhaka",
+      "customerIp": "203.99.145.181",
+      "items": [
+        {
+          "variantId": "prod-1789981372443-1",
+          "variantName": "রয়্যাল ব্লু (Royal Blue)",
+          "size": "৩৮",
+          "customSelections": {
+            "বডি সাইজ": "৩৮"
+          },
+          "quantity": 1,
+          "unitPrice": 999,
+          "subtotal": 999,
+          "image": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80"
+        }
+      ],
+      "deliveryLocation": "outside_dhaka",
+      "subtotal": 999,
+      "deliveryCharge": 120,
+      "grandTotal": 1119,
+      "step": "address_entered",
+      "createdAt": "2026-09-21T17:53:10.984Z",
+      "updatedAt": "2026-09-21T17:53:21.996Z",
+      "status": "recovered",
+      "notes": "চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি • অর্ডার সফলভাবে কনফার্ম হয়েছে: #ORD-2932"
+    },
     {
       "id": "inc-101",
       "landingPageId": "page-1",

@@ -6,6 +6,7 @@ import {
   Edit,
   Eye,
   Copy,
+  Check,
   Trash2,
   Package,
   Layers,
@@ -35,6 +36,22 @@ export default function LandingPagesView() {
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [settingDefaultId, setSettingDefaultId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+
+  const handleCopyLink = (slug: string, isDefault = false) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const url = isDefault ? `${origin}/` : `${origin}/${slug}`;
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(url).then(() => {
+        setCopiedSlug(slug);
+        setTimeout(() => setCopiedSlug(null), 2500);
+      }).catch(() => {
+        prompt('এই পেইজের লিঙ্ক কপি করুন:', url);
+      });
+    } else {
+      prompt('এই পেইজের লিঙ্ক কপি করুন:', url);
+    }
+  };
 
   // Helper: find current default home page
   const currentHomePage = landingPages.find(p => p.isDefault) || landingPages[0];
@@ -52,7 +69,7 @@ export default function LandingPagesView() {
 
   const handleOpenLive = (page: LandingPage) => {
     setActiveLandingPage(page);
-    setViewMode('customer');
+    setViewMode('customer', page.isDefault ? undefined : page.slug);
   };
 
   const handleSetDefault = async (page: LandingPage) => {
@@ -208,18 +225,6 @@ export default function LandingPagesView() {
           <p className="text-xs text-stone-500 mt-1">
             আপনার স্টোরে মোট <strong>{landingPages.length}</strong> টি সক্রিয় অন-পেইজ রয়েছে। যেকোনো অন-পেইজ বা ই-কমার্স স্টোরকে এক ক্লিকে প্রধান হোমপেইজ বানাতে পারেন।
           </p>
-
-          <div className="mt-2.5 flex items-center gap-2 flex-wrap text-xs">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 font-semibold shadow-2xs">
-              <Home className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-              <span>প্রধান হোমপেইজ:</span>
-              <strong className="text-stone-900">{currentHomePage?.title}</strong>
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-200 text-amber-950 font-bold">
-                {currentHomePage?.pageType === 'ecommerce' ? 'ই-কমার্স স্টোর' : 'অন-পেইজ'}
-              </span>
-            </div>
-            <span className="text-stone-400 text-[11px]">• ওয়েবসাইটের মূল ঠিকানায় (/) সরাসরি এই পেইজটি লোড হবে</span>
-          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
@@ -239,6 +244,63 @@ export default function LandingPagesView() {
           >
             <Plus className="w-4 h-4" />
             <span>নতুন অন-পেইজ</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Dedicated Home Page Selection Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-2xs">
+        <div className="flex items-start sm:items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-amber-500 text-stone-950 flex items-center justify-center font-bold shrink-0 shadow-xs">
+            <Home className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-amber-900 uppercase tracking-wider">প্রধান হোমপেইজ সেটিংস</span>
+              <span className="px-2 py-0.5 rounded-full bg-amber-200 text-amber-950 text-[10px] font-bold">
+                {currentHomePage?.pageType === 'ecommerce' ? 'ই-কমার্স শপ' : 'অন-পেইজ'}
+              </span>
+            </div>
+            <p className="text-sm font-black text-stone-900 mt-0.5">
+              বর্তমান মূল হোমপেইজ: <span className="text-amber-700">{currentHomePage?.title}</span>
+            </p>
+            <p className="text-xs text-stone-500 mt-0.5">
+              কাস্টমার সরাসরি মূল ডোমেইনে (/) প্রবেশ করলে এই পেইজটি প্রদর্শিত হবে। নিচের ড্রপডাউন থেকে পরিবর্তন করুন:
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 flex-wrap w-full md:w-auto">
+          <select
+            value={currentHomePage?.id || ''}
+            onChange={(e) => {
+              const selected = landingPages.find(p => p.id === e.target.value);
+              if (selected && selected.id !== currentHomePage?.id) {
+                handleSetDefault(selected);
+              }
+            }}
+            disabled={settingDefaultId !== null}
+            className="w-full sm:w-auto max-w-full sm:max-w-xs truncate px-3 py-2 bg-white border border-amber-300 text-stone-800 text-xs font-bold rounded-xl shadow-2xs focus:ring-2 focus:ring-amber-500 focus:outline-none cursor-pointer"
+          >
+            {landingPages.map(p => {
+              const shortTitle = p.title.length > 25 ? `${p.title.slice(0, 25)}...` : p.title;
+              const typeLabel = p.pageType === 'ecommerce' ? 'শপ' : 'অন-পেইজ';
+              return (
+                <option key={p.id} value={p.id} title={p.title}>
+                  {p.isDefault ? '✓ ' : ''}{shortTitle} ({typeLabel})
+                </option>
+              );
+            })}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => handleOpenLive(currentHomePage)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-2xs whitespace-nowrap ml-auto sm:ml-0"
+            title="বর্তমান হোমপেইজ সরাসরি লাইভ দেখুন"
+          >
+            <Eye className="w-3.5 h-3.5" />
+            <span>হোমপেইজ লাইভ দেখুন</span>
           </button>
         </div>
       </div>
@@ -328,12 +390,45 @@ export default function LandingPagesView() {
                   </div>
 
                   <div className="absolute bottom-3 left-3 right-3 text-white">
-                    <h3 className="font-bold text-base sm:text-lg leading-snug line-clamp-1">
+                    <h3 className="font-bold text-base sm:text-lg leading-snug line-clamp-1 drop-shadow-sm">
                       {page.title}
                     </h3>
-                    <p className="text-[11px] text-white/80 font-mono mt-0.5">
-                      /{page.slug}
-                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-[11px] text-amber-200 font-mono font-medium bg-black/50 px-2 py-0.5 rounded border border-white/10">
+                        /{page.slug}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCopyLink(page.slug, page.isDefault);
+                        }}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-white/20 hover:bg-white/30 text-white text-[11px] font-medium backdrop-blur-xs transition"
+                        title="এই পেইজের সরাসরি লিঙ্ক কপি করুন"
+                      >
+                        {copiedSlug === page.slug ? (
+                          <>
+                            <Check className="w-3 h-3 text-emerald-300" />
+                            <span className="text-emerald-300 font-bold">কপি হয়েছে!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3 h-3" />
+                            <span>লিঙ্ক কপি</span>
+                          </>
+                        )}
+                      </button>
+                      <a
+                        href={page.isDefault ? '/' : `/${page.slug}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1 rounded bg-white/20 hover:bg-white/30 text-white transition inline-flex items-center justify-center"
+                        title="নতুন উইন্ডো/ট্যাবে দেখুন"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
                 </div>
 

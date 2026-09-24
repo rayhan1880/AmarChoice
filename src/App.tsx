@@ -21,7 +21,7 @@ function MainContent() {
   // If in customer view, show the customer landing page
   if (viewMode === 'customer') {
     return (
-      <div className="min-h-screen bg-[#f8f4f0] flex flex-col font-sans antialiased text-stone-900">
+      <div className="min-h-screen bg-[#f8f4f0] flex flex-col font-sans antialiased text-stone-900 w-full max-w-full overflow-x-hidden">
         <LandingPageView />
       </div>
     );

@@ -1,4 +1,4 @@
-import { useState, useMemo, FormEvent } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback, FormEvent } from 'react';
 import { LandingPage, ProductVariant, OrderItem, VariantOptionField } from '../../types.ts';
 import { useApp } from '../../context/AppContext.tsx';
 import {
@@ -22,8 +22,11 @@ import {
   ExternalLink,
   Eye,
   Star,
-  PhoneCall
+  PhoneCall,
+  PackageCheck
 } from 'lucide-react';
+import ProductImageSlider from '../common/ProductImageSlider.tsx';
+import CustomerOrderHistoryModal from './CustomerOrderHistoryModal.tsx';
 
 interface EcommerceStoreViewProps {
   page: LandingPage;
@@ -36,6 +39,24 @@ interface CartItem {
   long?: string;
   customSelections?: Record<string, string>;
   quantity: number;
+}
+
+// Helper to get hex color for color badges & pills
+function getColorHex(colorName: string): string {
+  const c = colorName.toLowerCase().trim();
+  if (c.includes('কালো') || c.includes('black')) return '#18181b';
+  if (c.includes('সাদা') || c.includes('white')) return '#f4f4f5';
+  if (c.includes('মেরুন') || c.includes('maroon') || c.includes('burgundy')) return '#881337';
+  if (c.includes('লাল') || c.includes('red')) return '#dc2626';
+  if (c.includes('সবুজ') || c.includes('green') || c.includes('জলপাই') || c.includes('olive')) return '#15803d';
+  if (c.includes('নীল') || c.includes('blue') || c.includes('নেভি') || c.includes('navy')) return '#1d4ed8';
+  if (c.includes('গোলাপী') || c.includes('pink')) return '#ec4899';
+  if (c.includes('হলুদ') || c.includes('yellow') || c.includes('সরিষা') || c.includes('mustard')) return '#eab308';
+  if (c.includes('ধূসর') || c.includes('gray') || c.includes('grey') || c.includes('ছাই')) return '#6b7280';
+  if (c.includes('বাদামী') || c.includes('brown') || c.includes('চকোলেট') || c.includes('chocolate')) return '#78350f';
+  if (c.includes('কমলা') || c.includes('orange')) return '#ea580c';
+  if (c.includes('বেগুনী') || c.includes('purple') || c.includes('violet')) return '#7e22ce';
+  return '#0d9488';
 }
 
 // Helper to extract variant option fields, falling back to legacy sizes/longSizes
@@ -62,7 +83,7 @@ function getProductCustomFields(prod: ProductVariant): VariantOptionField[] {
 }
 
 export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
-  const { createOrder, trackPixelEvent } = useApp();
+  const { createOrder, trackPixelEvent, saveIncompleteOrderLead } = useApp();
 
   // Search and Category filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -76,17 +97,24 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartToast, setCartToast] = useState<{ message: string; visible: boolean } | null>(null);
 
-  // Single Product Quick Order Modal
+  // Single Product Quick Order & Selection Modal
   const [quickOrderProduct, setQuickOrderProduct] = useState<{
     product: ProductVariant;
+    mode: 'order' | 'cart';
+    quantity: number;
     size: string;
     long?: string;
+    color?: string;
     customSelections: Record<string, string>;
     fieldSelections: Record<string, string>;
   } | null>(null);
 
   // Product Full Detail Quick View Modal
   const [quickViewProduct, setQuickViewProduct] = useState<ProductVariant | null>(null);
+
+  // Customer Order Tracking & Courier History Modal
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+  const [orderHistoryPhone, setOrderHistoryPhone] = useState('');
 
   // Checkout Form State
   const [customerName, setCustomerName] = useState('');
@@ -188,17 +216,49 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
     }, 2800);
   };
 
-  // Add product to Cart
-  const handleAddToCart = (prod: ProductVariant, openCartAfter = false) => {
-    const { size, long, customSelections } = getProductSelection(prod);
-    const optionFingerprint = Object.entries(customSelections).map(([k, v]) => `${k}:${v}`).join('|') || `${size}-${long || 'none'}`;
+  // Open Single Product Modal with mode ('order' for checkout or 'cart' for cart add)
+  const openProductActionModal = (prod: ProductVariant, mode: 'order' | 'cart' = 'order') => {
+    const { size, long, customSelections, fieldSelections } = getProductSelection(prod);
+    const colors = prod.colors && prod.colors.length > 0 ? prod.colors : (prod.colorName ? [prod.colorName] : []);
+    const initialColor = colors[0] || '';
+    const initialCustom = { ...customSelections };
+    if (initialColor && !initialCustom['কালার'] && !initialCustom['Color'] && !initialCustom['রং']) {
+      initialCustom['কালার'] = initialColor;
+    }
+    setQuickOrderProduct({
+      product: prod,
+      mode,
+      quantity: 1,
+      size: size || (prod.sizes && prod.sizes[0]) || 'Standard',
+      long: long || (prod.longSizes && prod.longSizes[0]) || '',
+      color: initialColor,
+      customSelections: initialCustom,
+      fieldSelections: { ...fieldSelections }
+    });
+  };
+
+  // Add product to Cart with explicit options & quantity
+  const handleAddToCartWithOptions = (
+    prod: ProductVariant,
+    size: string,
+    long?: string,
+    color?: string,
+    customSelections: Record<string, string> = {},
+    quantity = 1,
+    openCartAfter = false
+  ) => {
+    const finalSelections = { ...customSelections };
+    if (color && !finalSelections['কালার'] && !finalSelections['Color'] && !finalSelections['রং']) {
+      finalSelections['কালার'] = color;
+    }
+    const optionFingerprint = Object.entries(finalSelections).map(([k, v]) => `${k}:${v}`).join('|') || `${size}-${long || 'none'}-${color || 'none'}`;
     const cartItemId = `${prod.id}-${optionFingerprint}`;
 
     setCart(prev => {
       const existingIdx = prev.findIndex(item => item.id === cartItemId);
       if (existingIdx > -1) {
         const updated = [...prev];
-        updated[existingIdx].quantity += 1;
+        updated[existingIdx].quantity += quantity;
         return updated;
       } else {
         return [
@@ -208,8 +268,8 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
             variant: prod,
             size,
             long,
-            customSelections,
-            quantity: 1
+            customSelections: finalSelections,
+            quantity
           }
         ];
       }
@@ -219,20 +279,24 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
       productName: prod.name,
       price: prod.price,
       size,
-      long
+      long,
+      quantity
     });
 
-    triggerToast(`"${prod.name}" কার্টে যোগ করা হয়েছে!`);
+    triggerToast(`"${prod.name}" কার্টে যোগ করা হয়েছে!`);
     if (openCartAfter) {
       setIsCartOpen(true);
     }
   };
 
-  // Quick Single Product "অর্ডার করুন" click
+  // Add product to Cart (opens selection modal first)
+  const handleAddToCart = (prod: ProductVariant, openCartAfter = false) => {
+    openProductActionModal(prod, 'cart');
+  };
+
+  // Quick Single Product "অর্ডার করুন" click (opens direct order modal)
   const handleDirectOrder = (prod: ProductVariant) => {
-    const { size, long, customSelections, fieldSelections } = getProductSelection(prod);
-    setQuickOrderProduct({ product: prod, size, long, customSelections, fieldSelections });
-    // Also prepare cart or open direct checkout modal
+    openProductActionModal(prod, 'order');
   };
 
   // Cart operations
@@ -273,7 +337,8 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
   const cartGrandTotal = cartSubtotal > 0 ? cartSubtotal + deliveryFee : 0;
 
   // Single Product Quick Order Calculation
-  const quickProductSubtotal = quickOrderProduct ? quickOrderProduct.product.price : 0;
+  const quickQuantity = quickOrderProduct?.quantity || 1;
+  const quickProductSubtotal = quickOrderProduct ? quickOrderProduct.product.price * quickQuantity : 0;
   const quickDeliveryFee = page.deliveryCharges?.isFreeDelivery
     ? 0
     : deliveryLocation === 'inside_dhaka'
@@ -281,10 +346,139 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
     : page.deliveryCharges?.outsideDhaka ?? 120;
   const quickGrandTotal = quickProductSubtotal + quickDeliveryFee;
 
+  // Stable lead ID for the current checkout session
+  const leadSessionIdRef = useRef<string>(`inc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`);
+
+  // Auto-capture Incomplete Order Lead when customer interacts with checkout forms
+  const captureEcommerceIncompleteLead = useCallback((customStep?: string, customNote?: string) => {
+    if (orderSuccessData || !page) return;
+
+    const bnToEn: Record<string, string> = { '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9' };
+    const phoneClean = customerPhone.replace(/[০-৯]/g, d => bnToEn[d] || d).replace(/\D/g, '');
+    const hasPhone = phoneClean.length >= 6 || customerPhone.trim().length >= 6;
+    const hasNameOrAddr = (customerName.trim().length > 1 && customerName.trim() !== 'অজানা ক্রেতা') || customerAddress.trim().length > 3;
+
+    if (!hasPhone && !hasNameOrAddr) return;
+
+    const currentItems: OrderItem[] = quickOrderProduct
+      ? [{
+          variantId: quickOrderProduct.product.id,
+          variantName: quickOrderProduct.product.name,
+          size: quickOrderProduct.size,
+          long: quickOrderProduct.long,
+          customSelections: quickOrderProduct.customSelections,
+          quantity: quickQuantity,
+          unitPrice: quickOrderProduct.product.price,
+          subtotal: quickProductSubtotal,
+          image: quickOrderProduct.product.image
+        }]
+      : (cart.length > 0
+          ? cart.map(item => ({
+              variantId: item.variant.id,
+              variantName: item.variant.name,
+              size: item.size,
+              long: item.long,
+              customSelections: item.customSelections,
+              quantity: item.quantity,
+              unitPrice: item.variant.price,
+              subtotal: item.variant.price * item.quantity,
+              image: item.variant.image
+            }))
+          : (page.products && page.products.length > 0
+              ? [{
+                  variantId: page.products[0].id,
+                  variantName: page.products[0].name,
+                  size: 'Standard',
+                  quantity: 1,
+                  unitPrice: page.products[0].price,
+                  subtotal: page.products[0].price,
+                  image: page.products[0].image
+                }]
+              : []
+            )
+        );
+
+    const calcSubtotal = quickOrderProduct ? quickProductSubtotal : (cartSubtotal > 0 ? cartSubtotal : (page.products?.[0]?.price || 0));
+    const calcDeliveryFee = quickOrderProduct ? quickDeliveryFee : deliveryFee;
+    const calcGrandTotal = calcSubtotal + calcDeliveryFee;
+
+    saveIncompleteOrderLead({
+      id: leadSessionIdRef.current,
+      landingPageId: page.id,
+      landingPageTitle: page.title,
+      landingPageSlug: page.slug,
+      customerName: customerName.trim() || 'অজানা ক্রেতা',
+      customerPhone: customerPhone.trim(),
+      customerAddress: customerAddress.trim(),
+      items: currentItems,
+      deliveryLocation,
+      subtotal: calcSubtotal,
+      deliveryCharge: calcDeliveryFee,
+      grandTotal: calcGrandTotal,
+      step: (customStep as any) || (customerAddress.trim() ? 'address_entered' : (hasPhone ? 'phone_entered' : 'details_entered')),
+      notes: customNote || (orderNote.trim() || 'ই-কমার্স স্টোর চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি')
+    });
+  }, [
+    orderSuccessData,
+    page,
+    customerPhone,
+    customerName,
+    customerAddress,
+    quickOrderProduct,
+    quickQuantity,
+    quickProductSubtotal,
+    cart,
+    cartSubtotal,
+    quickDeliveryFee,
+    deliveryFee,
+    deliveryLocation,
+    orderNote,
+    saveIncompleteOrderLead
+  ]);
+
+  useEffect(() => {
+    if (orderSuccessData || !page) return;
+    const bnToEn: Record<string, string> = { '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9' };
+    const phoneClean = customerPhone.replace(/[০-৯]/g, d => bnToEn[d] || d).replace(/\D/g, '');
+    const hasPhone = phoneClean.length >= 6 || customerPhone.trim().length >= 6;
+    const hasNameOrAddr = (customerName.trim().length > 1 && customerName.trim() !== 'অজানা ক্রেতা') || customerAddress.trim().length > 3;
+
+    if (!hasPhone && !hasNameOrAddr) return;
+
+    const delay = phoneClean.length >= 11 ? 150 : 500;
+    const timer = setTimeout(() => {
+      captureEcommerceIncompleteLead();
+    }, delay);
+
+    const handleBeforeUnload = () => {
+      captureEcommerceIncompleteLead('abandoned', 'স্টোর পেজ ত্যাগ করার সময় স্বয়ংক্রিয়ভাবে সংগৃহীত লিড');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
+    };
+  }, [customerPhone, customerName, customerAddress, captureEcommerceIncompleteLead, orderSuccessData, page]);
+
+  const closeQuickOrderModal = () => {
+    captureEcommerceIncompleteLead('abandoned', 'কুইক অর্ডার পপআপ বন্ধ করা হয়েছে');
+    setQuickOrderProduct(null);
+  };
+
+  const closeCartDrawer = () => {
+    captureEcommerceIncompleteLead('abandoned', 'শপিং কার্ট বন্ধ করা হয়েছে');
+    setIsCartOpen(false);
+  };
+
   // Submit Multi-Item Cart Order
   const handleCartCheckoutSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!customerName.trim() || !customerPhone.trim() || !customerAddress.trim()) {
+      captureEcommerceIncompleteLead('details_entered', 'কার্ট চেকআউট ফর্ম অসম্পূর্ণ রেখে সাবমিট করেছিলেন');
       setCheckoutError('অনুগ্রহ করে নাম, ১১ ডিজিটের মোবাইল নাম্বার ও সম্পূর্ণ ঠিকানা পূরণ করুন।');
       return;
     }
@@ -359,6 +553,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
     e.preventDefault();
     if (!quickOrderProduct) return;
     if (!customerName.trim() || !customerPhone.trim() || !customerAddress.trim()) {
+      captureEcommerceIncompleteLead('details_entered', 'কুইক অর্ডার ফর্ম অসম্পূর্ণ রেখে সাবমিট করেছিলেন');
       setCheckoutError('অনুগ্রহ করে নাম, ১১ ডিজিটের মোবাইল নাম্বার ও সম্পূর্ণ ঠিকানা পূরণ করুন।');
       return;
     }
@@ -373,9 +568,9 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
         size: quickOrderProduct.size,
         long: quickOrderProduct.long,
         customSelections: quickOrderProduct.customSelections,
-        quantity: 1,
+        quantity: quickQuantity,
         unitPrice: quickOrderProduct.product.price,
-        subtotal: quickOrderProduct.product.price,
+        subtotal: quickProductSubtotal,
         image: quickOrderProduct.product.image
       }
     ];
@@ -425,7 +620,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen bg-[#f8f9fa] text-stone-900">
+    <div className="flex-1 flex flex-col min-h-screen bg-[#f8f9fa] text-stone-900 w-full max-w-full overflow-x-hidden">
       {/* Toast Notification */}
       {cartToast && (
         <div className="fixed top-5 right-5 z-50 bg-stone-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 text-xs font-bold animate-bounce">
@@ -444,7 +639,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
       {/* Top Promotional Announcement Banner */}
       {page.showTopBanner && (
         <div
-          className="text-white text-xs font-bold py-2 px-4 text-center shadow-xs"
+          className="text-white text-xs font-bold py-2 px-3 sm:px-4 text-center shadow-xs w-full"
           style={{ backgroundColor: themeColor }}
         >
           {page.topBannerText || '🎉 বিশেষ অফার – যেকোনো ২টি পণ্য অর্ডারে ফ্রি হোম ডেলিভারি!'}
@@ -452,18 +647,18 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
       )}
 
       {/* Main E-Commerce Sticky Header */}
-      <header className="bg-white border-b border-stone-200 sticky top-0 z-40 shadow-xs">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <header className="bg-white border-b border-stone-200 sticky top-0 z-40 shadow-xs w-full">
+        <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex items-center justify-between gap-2 sm:gap-3 w-full">
           {/* Brand Logo & Name */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-sm shrink-0"
               style={{ backgroundColor: themeColor }}
             >
               {page.brandName.charAt(0) || 'A'}
             </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight text-stone-900 leading-tight">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-extrabold tracking-tight text-stone-900 leading-tight truncate">
                 {page.brandName}
               </h1>
               <p className="text-[11px] text-stone-500 font-medium hidden sm:block">
@@ -494,7 +689,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Call button */}
             {page.callNumber && (
               <a
@@ -509,7 +704,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-full text-white font-bold text-xs shadow hover:opacity-95 transition relative"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-white font-bold text-xs shadow hover:opacity-95 transition relative"
               style={{ backgroundColor: themeColor }}
             >
               <ShoppingCart className="w-4 h-4" />
@@ -527,8 +722,8 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
         </div>
 
         {/* Mobile Search Bar */}
-        <div className="px-4 pb-2.5 md:hidden">
-          <div className="relative">
+        <div className="px-3 sm:px-4 pb-2.5 md:hidden flex items-center gap-2 w-full">
+          <div className="relative flex-1 min-w-0">
             <input
               type="text"
               value={searchQuery}
@@ -551,10 +746,10 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-6xl mx-auto px-4 pt-5 space-y-6">
+      <main className="max-w-6xl mx-auto px-2.5 sm:px-4 pt-3 sm:pt-5 space-y-4 sm:space-y-6 w-full min-w-0">
         {/* Store Hero Banner & Badges */}
         <div
-          className="relative text-white rounded-3xl p-6 sm:p-8 shadow-sm overflow-hidden border border-stone-800"
+          className="relative text-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-sm overflow-hidden border border-stone-800"
           style={{
             background: `linear-gradient(135deg, #1c1917 0%, #292524 50%, #1c1917 100%)`
           }}
@@ -565,13 +760,13 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
             style={{ backgroundColor: themeColor }}
           />
 
-          <div className="relative z-10 max-w-2xl space-y-3.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold backdrop-blur-md border border-white/10">
+          <div className="relative z-10 max-w-2xl space-y-2.5 sm:space-y-3.5">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/10 text-white text-[11px] sm:text-xs font-bold backdrop-blur-md border border-white/10">
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
               <span>{page.brandName} অফিশিয়াল অনলাইন শপ</span>
             </div>
 
-            <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight">
+            <h2 className="text-xl sm:text-4xl font-black tracking-tight leading-tight">
               {page.heroTitle || 'প্রিমিয়াম কালেকশন ও এক্সক্লুসিভ অফার'}
             </h2>
 
@@ -579,25 +774,25 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
               পছন্দের একাধিক পোশাক একসাথে কার্টে যুক্ত করুন অথবা সরাসরি ১-ক্লিকে ক্যাশ অন ডেলিভারিতে অর্ডার করুন।
             </p>
 
-            <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-semibold text-stone-200">
-              <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg backdrop-blur-xs border border-white/5">
-                <Truck className="w-4 h-4 text-emerald-400" />
+            <div className="pt-1 sm:pt-2 flex flex-wrap items-center gap-2 sm:gap-4 text-[11px] sm:text-xs font-semibold text-stone-200">
+              <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg backdrop-blur-xs border border-white/5">
+                <Truck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>সারাদেশে দ্রুত ডেলিভারি</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg backdrop-blur-xs border border-white/5">
-                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg backdrop-blur-xs border border-white/5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                 <span>ক্যাশ অন ডেলিভারি (হাতে পেয়ে পেমেন্ট)</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1 rounded-lg backdrop-blur-xs border border-white/5">
-                <RotateCcw className="w-4 h-4 text-emerald-400" />
-                <span>সহজ রিটার্ন ও এক্সচেঞ্জ</span>
+              <div className="flex items-center gap-1.5 bg-white/5 px-2 py-1 rounded-lg backdrop-blur-xs border border-white/5">
+                <RotateCcw className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                <span>সহজ রিটার্ন</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Category Pills Navigation */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto pb-1 scrollbar-none w-full min-w-0">
           {categories.map(cat => {
             const isSelected = selectedCategory === cat;
             return (
@@ -605,7 +800,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-4 py-2 rounded-full text-xs font-extrabold transition whitespace-nowrap shrink-0 border ${
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs font-extrabold transition whitespace-nowrap shrink-0 border ${
                   isSelected
                     ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
                     : 'bg-white hover:bg-stone-50 text-stone-700 border-stone-200 hover:border-stone-300'
@@ -618,24 +813,24 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
         </div>
 
         {/* Catalog Count & Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-teal-600" />
-            <h3 className="font-extrabold text-sm sm:text-base text-stone-900">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+            <ShoppingBag className="w-4 h-4 text-teal-600 shrink-0" />
+            <h3 className="font-extrabold text-xs sm:text-base text-stone-900 truncate">
               {selectedCategory} ({filteredProducts.length} টি পণ্য)
             </h3>
           </div>
           {searchQuery && (
-            <span className="text-xs text-stone-500">
-              সার্চ রেজাল্ট: <strong>"{searchQuery}"</strong>
+            <span className="text-[11px] sm:text-xs text-stone-500 shrink-0">
+              সার্চ: <strong>"{searchQuery}"</strong>
             </span>
           )}
         </div>
 
-        {/* Products Grid */}
+        {/* Products Grid - Optimized 2-Column on Mobile, 3 on Tablet, 4 on Desktop */}
         {filteredProducts.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center border border-stone-200 space-y-3">
-            <ShoppingBag className="w-12 h-12 text-stone-300 mx-auto" />
+          <div className="bg-white rounded-2xl p-8 sm:p-12 text-center border border-stone-200 space-y-3">
+            <ShoppingBag className="w-10 h-10 sm:w-12 sm:h-12 text-stone-300 mx-auto" />
             <p className="text-stone-600 font-bold text-sm">কোনো পণ্য পাওয়া যায়নি।</p>
             <p className="text-xs text-stone-400">অনুগ্রহ করে অন্য কোনো ক্যাটাগরি অথবা ভিন্ন কিওয়ার্ড দিয়ে সার্চ করুন।</p>
             <button
@@ -650,48 +845,53 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-4 w-full">
             {filteredProducts.map(prod => {
-              const selection = getProductSelection(prod);
               const discountPct = prod.oldPrice > prod.price
                 ? Math.round(((prod.oldPrice - prod.price) / prod.oldPrice) * 100)
                 : 0;
 
+              const productImages = (prod.images && prod.images.length > 0)
+                ? prod.images
+                : (prod.galleryImages && prod.galleryImages.length > 0)
+                ? prod.galleryImages
+                : [prod.image].filter(Boolean);
+
               return (
                 <div
                   key={prod.id}
-                  className="bg-white rounded-2xl border border-stone-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group hover:border-stone-300"
+                  className="bg-white rounded-xl sm:rounded-2xl border border-stone-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group hover:border-stone-300 w-full min-w-0"
                 >
-                  {/* Top Image & Badges */}
-                  <div>
-                    <div
-                      className="relative aspect-square bg-stone-100 overflow-hidden cursor-pointer"
-                      onClick={() => setQuickViewProduct(prod)}
-                    >
-                      <img
-                        src={prod.image}
+                  {/* Top Image Slider & Badges */}
+                  <div className="w-full min-w-0">
+                    <div className="relative overflow-hidden bg-stone-100 w-full">
+                      <ProductImageSlider
+                        images={productImages}
                         alt={prod.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        referrerPolicy="no-referrer"
+                        aspectRatio="aspect-square"
+                        showThumbnails={false}
+                        showDots={productImages.length > 1}
+                        className="w-full"
+                        onImageClick={() => openProductActionModal(prod, 'order')}
+                        badge={
+                          <div className="flex flex-col gap-1 items-start">
+                            {discountPct > 0 && (
+                              <span
+                                className="text-white text-[9px] sm:text-[10px] font-black px-1.5 sm:px-2 py-0.5 rounded-full shadow-xs"
+                                style={{ backgroundColor: themeColor }}
+                              >
+                                -{discountPct}% ছাড়
+                              </span>
+                            )}
+                            {prod.isFeatured && (
+                              <span className="bg-amber-500 text-white text-[8px] sm:text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
+                                <Sparkles className="w-2.5 h-2.5" />
+                                হট
+                              </span>
+                            )}
+                          </div>
+                        }
                       />
-
-                      {/* Top Badges */}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1 items-start pointer-events-none">
-                        {discountPct > 0 && (
-                          <span
-                            className="text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-xs"
-                            style={{ backgroundColor: themeColor }}
-                          >
-                            -{discountPct}% ছাড়
-                          </span>
-                        )}
-                        {prod.isFeatured && (
-                          <span className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full shadow-xs flex items-center gap-0.5">
-                            <Sparkles className="w-2.5 h-2.5" />
-                            হট
-                          </span>
-                        )}
-                      </div>
 
                       {/* Quick View Hover Button (desktop) */}
                       <button
@@ -700,115 +900,93 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                           e.stopPropagation();
                           setQuickViewProduct(prod);
                         }}
-                        className="absolute bottom-2 right-2 p-1.5 rounded-xl bg-white/90 hover:bg-white text-stone-700 shadow-sm transition backdrop-blur-xs hidden sm:flex items-center gap-1 text-[10px] font-bold"
+                        className="absolute bottom-2 right-2 p-1.5 rounded-xl bg-white/90 hover:bg-white text-stone-700 shadow-sm transition backdrop-blur-xs hidden sm:flex items-center gap-1 text-[10px] font-bold z-10"
                         title="পণ্যটি বিস্তারিত দেখুন"
                       >
                         <Eye className="w-3.5 h-3.5" />
                         <span>ভিউ</span>
                       </button>
+                    </div>
 
-                      {/* Category Badge */}
+                    {/* Card Content - Clean & Mobile Optimized */}
+                    <div className="p-2 sm:p-3 space-y-1 sm:space-y-1.5 min-w-0">
                       {prod.category && (
-                        <div className="absolute bottom-2 left-2 bg-stone-900/80 text-stone-100 text-[9px] font-bold px-2 py-0.5 rounded-md backdrop-blur-xs pointer-events-none">
+                        <div className="text-[9px] sm:text-[10px] font-semibold text-teal-700/80 uppercase tracking-wide truncate block">
                           {prod.category}
                         </div>
                       )}
-                    </div>
 
-                    {/* Card Content */}
-                    <div className="p-3 space-y-2">
                       <h4
-                        onClick={() => setQuickViewProduct(prod)}
-                        className="font-bold text-xs sm:text-sm text-stone-900 line-clamp-2 leading-snug group-hover:text-teal-700 transition cursor-pointer"
+                        onClick={() => openProductActionModal(prod, 'order')}
+                        className="font-bold text-xs sm:text-sm text-stone-900 line-clamp-2 leading-snug group-hover:text-teal-700 transition cursor-pointer min-h-[2rem] sm:min-h-[2.4rem] break-words"
                         title={prod.name}
                       >
                         {prod.name}
                       </h4>
 
                       {/* Pricing */}
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-sm sm:text-base font-black text-rose-700">
+                      <div className="flex items-baseline gap-1 sm:gap-1.5 pt-0.5 flex-wrap">
+                        <span className="text-xs sm:text-base font-black text-rose-700">
                           ৳ {prod.price}
                         </span>
                         {prod.oldPrice > prod.price && (
-                          <span className="text-[11px] text-stone-400 line-through">
+                          <span className="text-[10px] sm:text-xs text-stone-400 line-through">
                             ৳ {prod.oldPrice}
                           </span>
                         )}
                       </div>
 
-                      {/* Dynamic Option Selectors (Clean compact rows configured by admin) */}
-                      {getProductCustomFields(prod).map(field => {
-                        const activeVal = selection.fieldSelections[field.id] || field.options[0];
-                        const cleanLabel = field.label.replace(/:$/, '').trim();
-                        return (
-                          <div key={field.id} className="space-y-1 pt-0.5">
-                            <div className="flex items-center justify-between text-[10px] text-stone-500">
-                              <span className="font-semibold text-stone-400">{cleanLabel}:</span>
-                              <span className="font-bold text-stone-700 font-mono">{activeVal}</span>
+                      {/* Available Options Indicator (Clean mobile summary) */}
+                      <div className="flex items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] text-stone-500 pt-0.5 flex-wrap min-w-0">
+                        {prod.colors && prod.colors.length > 0 && (
+                          <div className="flex items-center gap-1 min-w-0">
+                            <div className="flex items-center -space-x-1 shrink-0">
+                              {prod.colors.slice(0, 3).map((col, idx) => (
+                                <span
+                                  key={idx}
+                                  className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full border border-white shadow-2xs shrink-0"
+                                  style={{ backgroundColor: getColorHex(col) }}
+                                  title={col}
+                                />
+                              ))}
                             </div>
-                            <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
-                              {field.options.slice(0, 4).map(opt => {
-                                const isSelected = activeVal === opt;
-                                return (
-                                  <button
-                                    key={opt}
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleSelectOption(prod.id, field.id, opt);
-                                    }}
-                                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold border transition shrink-0 ${
-                                      isSelected
-                                        ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
-                                        : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
-                                    }`}
-                                  >
-                                    {opt}
-                                  </button>
-                                );
-                              })}
-                              {field.options.length > 4 && (
-                                <button
-                                  type="button"
-                                  onClick={() => setQuickViewProduct(prod)}
-                                  className="text-[9px] text-teal-700 font-bold px-1 bg-teal-50 rounded border border-teal-200 shrink-0"
-                                >
-                                  +{field.options.length - 4}
-                                </button>
-                              )}
-                            </div>
+                            <span className="text-stone-400 truncate">{prod.colors.length} কালার</span>
                           </div>
-                        );
-                      })}
+                        )}
+                        {prod.sizes && prod.sizes.length > 0 && (
+                          <span className="text-stone-400 truncate">
+                            • {prod.sizes.length} সাইজ
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Sleek Action Buttons Bar: Single-line & Zero text wrap */}
-                  <div className="p-2.5 pt-0 flex items-center gap-1.5">
+                  {/* Sleek Action Buttons Bar - Perfectly Fitted in 2-Column Mobile */}
+                  <div className="p-2 sm:p-2.5 pt-0 flex items-center gap-1 sm:gap-1.5 min-w-0">
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleAddToCart(prod, false);
+                        openProductActionModal(prod, 'cart');
                       }}
-                      className="w-9 h-9 shrink-0 flex items-center justify-center rounded-xl bg-stone-100 hover:bg-teal-50 hover:text-teal-700 text-stone-700 transition border border-stone-200 active:scale-95 shadow-2xs"
-                      title="কার্টে যোগ করুন"
+                      className="w-7 h-7 sm:w-9 sm:h-9 shrink-0 flex items-center justify-center rounded-lg sm:rounded-xl bg-stone-100 hover:bg-teal-50 hover:text-teal-700 text-stone-700 transition border border-stone-200 active:scale-95 shadow-2xs"
+                      title="কার্টে যোগ করতে ক্লিক করুন"
                     >
-                      <ShoppingCart className="w-4 h-4" />
+                      <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </button>
 
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleDirectOrder(prod);
+                        openProductActionModal(prod, 'order');
                       }}
-                      className="flex-1 h-9 flex items-center justify-center gap-1 px-2.5 rounded-xl text-white text-xs font-extrabold transition shadow-xs hover:opacity-95 active:scale-95 whitespace-nowrap"
+                      className="flex-1 min-w-0 h-7 sm:h-9 flex items-center justify-center gap-1 px-1.5 sm:px-2.5 rounded-lg sm:rounded-xl text-white text-[11px] sm:text-xs font-extrabold transition shadow-xs hover:opacity-95 active:scale-95"
                       style={{ backgroundColor: themeColor }}
-                      title="সরাসরি ১-ক্লিকে অর্ডার করুন"
+                      title="সরাসরি ১-ক্লিকে অর্ডার করতে ক্লিক করুন"
                     >
-                      <Zap className="w-3.5 h-3.5 fill-current shrink-0" />
+                      <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current shrink-0" />
                       <span className="truncate">অর্ডার করুন</span>
                     </button>
                   </div>
@@ -846,7 +1024,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
-            onClick={() => setIsCartOpen(false)}
+            onClick={closeCartDrawer}
           />
 
           {/* Slide-over Drawer Panel */}
@@ -862,7 +1040,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
               </div>
               <button
                 type="button"
-                onClick={() => setIsCartOpen(false)}
+                onClick={closeCartDrawer}
                 className="p-1.5 rounded-lg hover:bg-stone-200 text-stone-500"
               >
                 <X className="w-5 h-5" />
@@ -878,7 +1056,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                   <p className="text-xs text-stone-400">শপ থেকে পছন্দের পণ্য নির্বাচন করে কার্টে যোগ করুন।</p>
                   <button
                     type="button"
-                    onClick={() => setIsCartOpen(false)}
+                    onClick={closeCartDrawer}
                     className="px-4 py-2 rounded-xl bg-stone-900 text-white text-xs font-bold"
                   >
                     শপিং শুরু করুন
@@ -958,47 +1136,47 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                     <span className="text-xs font-bold text-stone-800 block">
                       ডেলিভারি এরিয়া সিলেক্ট করুন:
                     </span>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-2">
                       <label
-                        className={`p-2.5 rounded-xl border flex flex-col cursor-pointer transition text-xs ${
+                        className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition text-xs ${
                           deliveryLocation === 'inside_dhaka'
                             ? 'bg-teal-50 border-teal-500 text-teal-950 font-bold shadow-2xs'
                             : 'bg-white border-stone-200 text-stone-700'
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <span>ঢাকার ভেতরে</span>
+                        <div className="flex items-center gap-2">
                           <input
                             type="radio"
                             name="cartDelivery"
                             checked={deliveryLocation === 'inside_dhaka'}
                             onChange={() => setDeliveryLocation('inside_dhaka')}
-                            className="text-teal-600"
+                            className="text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
                           />
+                          <span className="font-semibold text-stone-800">ঢাকার ভেতরে</span>
                         </div>
-                        <span className="text-[11px] text-stone-500 mt-1 font-semibold">
+                        <span className="text-xs text-stone-600 font-bold">
                           {page.deliveryCharges?.insideDhaka ?? 60}৳
                         </span>
                       </label>
 
                       <label
-                        className={`p-2.5 rounded-xl border flex flex-col cursor-pointer transition text-xs ${
+                        className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition text-xs ${
                           deliveryLocation === 'outside_dhaka'
                             ? 'bg-teal-50 border-teal-500 text-teal-950 font-bold shadow-2xs'
                             : 'bg-white border-stone-200 text-stone-700'
                         }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <span>ঢাকার বাইরে</span>
+                        <div className="flex items-center gap-2">
                           <input
                             type="radio"
                             name="cartDelivery"
                             checked={deliveryLocation === 'outside_dhaka'}
                             onChange={() => setDeliveryLocation('outside_dhaka')}
-                            className="text-teal-600"
+                            className="text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
                           />
+                          <span className="font-semibold text-stone-800">ঢাকার বাইরে</span>
                         </div>
-                        <span className="text-[11px] text-stone-500 mt-1 font-semibold">
+                        <span className="text-xs text-stone-600 font-bold">
                           {page.deliveryCharges?.outsideDhaka ?? 120}৳
                         </span>
                       </label>
@@ -1027,6 +1205,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                         required
                         value={customerName}
                         onChange={e => setCustomerName(e.target.value)}
+                        onBlur={() => captureEcommerceIncompleteLead()}
                         placeholder="যেমন: তানভীর হাসান"
                         className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
                       />
@@ -1041,6 +1220,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                         required
                         value={customerPhone}
                         onChange={e => setCustomerPhone(e.target.value)}
+                        onBlur={() => captureEcommerceIncompleteLead()}
                         placeholder="১১ ডিজিটের সচল নাম্বার দিন"
                         className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium"
                       />
@@ -1055,6 +1235,7 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                         rows={2}
                         value={customerAddress}
                         onChange={e => setCustomerAddress(e.target.value)}
+                        onBlur={() => captureEcommerceIncompleteLead()}
                         placeholder="আপনার জেলা, উপজেলা/ থানা, গ্রাম/ বাসা"
                         className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 font-medium resize-none"
                       />
@@ -1102,217 +1283,423 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
         </div>
       )}
 
-      {/* ==================== SINGLE PRODUCT QUICK ORDER MODAL ==================== */}
-      {quickOrderProduct && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-xs"
-            onClick={() => setQuickOrderProduct(null)}
-          />
+      {/* ==================== SINGLE PRODUCT SELECTION & ORDER/CART MODAL ==================== */}
+      {quickOrderProduct && (() => {
+        const modalImages = (quickOrderProduct.product.images && quickOrderProduct.product.images.length > 0)
+          ? quickOrderProduct.product.images
+          : (quickOrderProduct.product.galleryImages && quickOrderProduct.product.galleryImages.length > 0)
+          ? quickOrderProduct.product.galleryImages
+          : [quickOrderProduct.product.image].filter(Boolean);
 
-          <div className="relative bg-white rounded-3xl w-full max-w-lg shadow-2xl z-10 overflow-hidden border border-stone-200 max-h-[90vh] overflow-y-auto">
-            <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50 sticky top-0 z-20">
-              <div className="flex items-center gap-2">
-                <Zap className="w-4 h-4 text-amber-500" />
-                <h3 className="font-bold text-stone-900 text-sm sm:text-base">
-                  দ্রুত অর্ডার করুন (১-ক্লিক ক্যাশ অন ডেলিভারি)
-                </h3>
+        const discountPct = quickOrderProduct.product.oldPrice > quickOrderProduct.product.price
+          ? Math.round(((quickOrderProduct.product.oldPrice - quickOrderProduct.product.price) / quickOrderProduct.product.oldPrice) * 100)
+          : 0;
+
+        const isCartMode = quickOrderProduct.mode === 'cart';
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+            <div
+              className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+              onClick={closeQuickOrderModal}
+            />
+
+            <div className="relative bg-white rounded-3xl w-full max-w-lg shadow-2xl z-10 overflow-hidden border border-stone-200 max-h-[92vh] flex flex-col">
+              {/* Header with Mode Title */}
+              <div className="p-4 border-b border-stone-200 flex items-center justify-between bg-stone-50 shrink-0">
+                <div className="flex items-center gap-2">
+                  {isCartMode ? (
+                    <ShoppingCart className="w-5 h-5 text-teal-600" />
+                  ) : (
+                    <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                  )}
+                  <div>
+                    <h3 className="font-extrabold text-stone-900 text-sm sm:text-base leading-tight">
+                      {isCartMode ? 'কার্টে যোগ করুন' : 'দ্রুত অর্ডার করুন (১-ক্লিক ক্যাশ অন ডেলিভারি)'}
+                    </h3>
+                    <p className="text-[11px] text-stone-500">
+                      {isCartMode ? 'সাইজ ও কালার সিলেক্ট করে কার্টে যোগ করুন' : 'সাইজ ও কালার সিলেক্ট করে ঠিকানা দিন'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeQuickOrderModal}
+                  className="p-1.5 rounded-full hover:bg-stone-200 text-stone-500 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setQuickOrderProduct(null)}
-                className="p-1 rounded-lg hover:bg-stone-200 text-stone-500"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
 
-            <form onSubmit={handleQuickOrderSubmit} className="p-5 space-y-4">
-              {/* Product Preview & Variant Selectors */}
-              <div className="bg-stone-50 p-3.5 rounded-2xl border border-stone-200 space-y-3">
-                <div className="flex gap-3 items-center">
-                  <img
-                    src={quickOrderProduct.product.image}
+              {/* Scrollable Content Body */}
+              <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+                {/* Product Image Carousel Slider */}
+                <div className="rounded-2xl overflow-hidden border border-stone-200 bg-stone-100 shadow-2xs">
+                  <ProductImageSlider
+                    images={modalImages}
                     alt={quickOrderProduct.product.name}
-                    className="w-16 h-16 rounded-xl object-cover border border-stone-200 shrink-0 shadow-2xs"
-                    referrerPolicy="no-referrer"
+                    aspectRatio="aspect-[4/3] sm:aspect-[16/10]"
+                    showThumbnails={modalImages.length > 1}
+                    showDots={modalImages.length > 1}
                   />
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-bold text-xs sm:text-sm text-stone-900 leading-snug">
-                      {quickOrderProduct.product.name}
-                    </h4>
-                    <div className="font-black text-rose-700 text-sm mt-0.5">
+                </div>
+
+                {/* Product Name, Category & Price Header */}
+                <div className="space-y-1">
+                  {quickOrderProduct.product.category && (
+                    <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                      {quickOrderProduct.product.category}
+                    </span>
+                  )}
+                  <h4 className="font-bold text-sm sm:text-base text-stone-900 leading-snug">
+                    {quickOrderProduct.product.name}
+                  </h4>
+                  <div className="flex items-baseline gap-2 pt-0.5">
+                    <span className="text-base sm:text-lg font-black text-rose-700">
                       ৳ {quickOrderProduct.product.price}
-                    </div>
+                    </span>
+                    {quickOrderProduct.product.oldPrice > quickOrderProduct.product.price && (
+                      <span className="text-xs text-stone-400 line-through">
+                        ৳ {quickOrderProduct.product.oldPrice}
+                      </span>
+                    )}
+                    {discountPct > 0 && (
+                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                        ৳ {quickOrderProduct.product.oldPrice - quickOrderProduct.product.price} সাশ্রয়
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Dynamic Fields Choice */}
-                {getProductCustomFields(quickOrderProduct.product).map(field => {
-                  const cleanLabel = field.label.replace(/:$/, '').trim();
-                  const selectedVal = quickOrderProduct.fieldSelections[field.id] || field.options[0];
-                  return (
-                    <div key={field.id} className="border-t border-stone-200/80 pt-2.5">
-                      <div className="flex items-center justify-between text-xs mb-1.5">
-                        <span className="font-bold text-stone-700">{cleanLabel} পছন্দ করুন:</span>
-                        <span className="font-mono font-bold text-stone-900">{selectedVal}</span>
+                {/* ================= Variant Selectors (Color & Size) ================= */}
+                <div className="bg-stone-50 p-3.5 rounded-2xl border border-stone-200 space-y-3.5">
+                  {/* 1. Color Selector */}
+                  {quickOrderProduct.product.colors && quickOrderProduct.product.colors.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <span className="font-bold text-stone-800">কালার পছন্দ করুন:</span>
+                        <span className="font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded-md border border-teal-200">
+                          {quickOrderProduct.color || quickOrderProduct.product.colors[0]}
+                        </span>
                       </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {field.options.map(opt => {
-                          const isSelected = selectedVal === opt;
+                      <div className="flex flex-wrap gap-2">
+                        {quickOrderProduct.product.colors.map(col => {
+                          const isSelected = quickOrderProduct.color === col;
                           return (
                             <button
-                              key={opt}
+                              key={col}
                               type="button"
                               onClick={() => {
                                 setQuickOrderProduct(prev => {
                                   if (!prev) return null;
-                                  const customFields = getProductCustomFields(prev.product);
-                                  const updatedFields = { ...prev.fieldSelections, [field.id]: opt };
-                                  const updatedCustom = { ...prev.customSelections, [cleanLabel]: opt };
                                   return {
                                     ...prev,
-                                    size: field.id === customFields[0]?.id ? opt : prev.size,
-                                    long: field.id === customFields[1]?.id ? opt : prev.long,
-                                    fieldSelections: updatedFields,
-                                    customSelections: updatedCustom
+                                    color: col,
+                                    customSelections: { ...prev.customSelections, 'কালার': col }
                                   };
                                 });
                               }}
-                              className={`px-3 py-1 rounded-lg text-xs font-bold border transition ${
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
                                 isSelected
-                                  ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                                  ? 'bg-stone-900 text-white border-stone-900 shadow-sm ring-2 ring-stone-900/20'
                                   : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
                               }`}
                             >
-                              {opt}
+                              <span
+                                className="w-3.5 h-3.5 rounded-full border border-white/80 shadow-2xs shrink-0"
+                                style={{ backgroundColor: getColorHex(col) }}
+                              />
+                              <span>{col}</span>
+                              {isSelected && <Check className="w-3 h-3 ml-0.5" />}
                             </button>
                           );
                         })}
                       </div>
                     </div>
-                  );
-                })}
+                  )}
+
+                  {/* 2. Custom Option Fields (Size, Long, etc.) */}
+                  {getProductCustomFields(quickOrderProduct.product).map(field => {
+                    const cleanLabel = field.label.replace(/:$/, '').trim();
+                    const selectedVal = quickOrderProduct.fieldSelections[field.id] || field.options[0];
+                    return (
+                      <div key={field.id} className="border-t border-stone-200/80 pt-2.5 first:border-0 first:pt-0">
+                        <div className="flex items-center justify-between text-xs mb-1.5">
+                          <span className="font-bold text-stone-800">{cleanLabel} পছন্দ করুন:</span>
+                          <span className="font-mono font-bold text-stone-900 bg-stone-200/80 px-2 py-0.5 rounded-md">
+                            {selectedVal}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {field.options.map(opt => {
+                            const isSelected = selectedVal === opt;
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => {
+                                  setQuickOrderProduct(prev => {
+                                    if (!prev) return null;
+                                    const customFields = getProductCustomFields(prev.product);
+                                    const updatedFields = { ...prev.fieldSelections, [field.id]: opt };
+                                    const updatedCustom = { ...prev.customSelections, [cleanLabel]: opt };
+                                    return {
+                                      ...prev,
+                                      size: field.id === customFields[0]?.id ? opt : prev.size,
+                                      long: field.id === customFields[1]?.id ? opt : prev.long,
+                                      fieldSelections: updatedFields,
+                                      customSelections: updatedCustom
+                                    };
+                                  });
+                                }}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition ${
+                                  isSelected
+                                    ? 'bg-stone-900 text-white border-stone-900 shadow-2xs'
+                                    : 'bg-white text-stone-700 border-stone-300 hover:bg-stone-100'
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* 3. Quantity Counter */}
+                  <div className="flex items-center justify-between pt-2.5 border-t border-stone-200">
+                    <span className="text-xs font-bold text-stone-800">পরিমাণ (Quantity):</span>
+                    <div className="flex items-center border border-stone-300 rounded-xl overflow-hidden bg-white shadow-2xs">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickOrderProduct(prev => prev ? { ...prev, quantity: Math.max(1, prev.quantity - 1) } : null);
+                        }}
+                        className="w-8 h-8 flex items-center justify-center hover:bg-stone-100 text-stone-700 transition active:scale-95"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="w-10 text-center font-bold font-mono text-xs text-stone-900">
+                        {quickOrderProduct.quantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickOrderProduct(prev => prev ? { ...prev, quantity: prev.quantity + 1 } : null);
+                        }}
+                        className="w-8 h-8 flex items-center justify-center hover:bg-stone-100 text-stone-700 transition active:scale-95"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ================= ORDER MODE: CHECKOUT FORM ================= */}
+                {!isCartMode && (
+                  <form id="quick-order-form" onSubmit={handleQuickOrderSubmit} className="space-y-3.5 pt-1">
+                    {checkoutError && (
+                      <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span>{checkoutError}</span>
+                      </div>
+                    )}
+
+                    {/* Delivery Choice */}
+                    <div>
+                      <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                        ডেলিভারি লোকেশন:
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryLocation('inside_dhaka')}
+                          className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                            deliveryLocation === 'inside_dhaka'
+                              ? 'bg-teal-50 border-teal-600 text-teal-900 shadow-2xs'
+                              : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${deliveryLocation === 'inside_dhaka' ? 'border-teal-600 bg-teal-600' : 'border-stone-400'}`}>
+                              {deliveryLocation === 'inside_dhaka' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </span>
+                            <span>ঢাকার ভেতরে</span>
+                          </div>
+                          <span className="text-teal-900 font-bold">{page.deliveryCharges?.insideDhaka ?? 60}৳</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryLocation('outside_dhaka')}
+                          className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-between cursor-pointer ${
+                            deliveryLocation === 'outside_dhaka'
+                              ? 'bg-teal-50 border-teal-600 text-teal-900 shadow-2xs'
+                              : 'bg-white border-stone-200 text-stone-700 hover:bg-stone-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${deliveryLocation === 'outside_dhaka' ? 'border-teal-600 bg-teal-600' : 'border-stone-400'}`}>
+                              {deliveryLocation === 'outside_dhaka' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                            </span>
+                            <span>ঢাকার বাইরে</span>
+                          </div>
+                          <span className="text-teal-900 font-bold">{page.deliveryCharges?.outsideDhaka ?? 120}৳</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Customer Inputs */}
+                    <div className="space-y-2.5">
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                          আপনার নাম *
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={customerName}
+                          onChange={e => setCustomerName(e.target.value)}
+                          onBlur={() => captureEcommerceIncompleteLead()}
+                          placeholder="আপনার পুরো নাম দিন"
+                          className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                          মোবাইল নাম্বার *
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          value={customerPhone}
+                          onChange={e => setCustomerPhone(e.target.value)}
+                          onBlur={() => captureEcommerceIncompleteLead()}
+                          placeholder="১১ ডিজিটের সচল মোবাইল নাম্বার"
+                          className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-700 mb-1">
+                          সম্পূর্ণ ডেলিভারি ঠিকানা *
+                        </label>
+                        <textarea
+                          required
+                          rows={2}
+                          value={customerAddress}
+                          onChange={e => setCustomerAddress(e.target.value)}
+                          onBlur={() => captureEcommerceIncompleteLead()}
+                          placeholder="আপনার জেলা, উপজেলা/ থানা, গ্রাম/ বাসা নং"
+                          className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 resize-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Order Total Breakdown */}
+                    <div className="bg-stone-100 p-3 rounded-xl text-xs space-y-1.5 border border-stone-200">
+                      <div className="flex justify-between text-stone-600">
+                        <span>পণ্যের মোট মূল্য ({quickOrderProduct.quantity} টি):</span>
+                        <span className="font-mono font-bold text-stone-900">৳ {quickProductSubtotal}</span>
+                      </div>
+                      <div className="flex justify-between text-stone-600">
+                        <span>ডেলিভারি চার্জ:</span>
+                        <span className="font-mono font-bold text-stone-900">
+                          {quickDeliveryFee === 0 ? 'ফ্রি' : `৳ ${quickDeliveryFee}`}
+                        </span>
+                      </div>
+                      <div className="border-t border-stone-200 pt-1.5 flex justify-between font-black text-sm text-stone-900">
+                        <span>সর্বমোট পরিশোধযোগ্য বিল:</span>
+                        <span className="font-mono text-rose-700">৳ {quickGrandTotal}</span>
+                      </div>
+                    </div>
+                  </form>
+                )}
               </div>
 
-              {checkoutError && (
-                <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{checkoutError}</span>
-                </div>
-              )}
+              {/* Modal Footer Actions */}
+              <div className="p-4 bg-stone-50 border-t border-stone-200 shrink-0 space-y-2">
+                {isCartMode ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleAddToCartWithOptions(
+                          quickOrderProduct.product,
+                          quickOrderProduct.size,
+                          quickOrderProduct.long,
+                          quickOrderProduct.color,
+                          quickOrderProduct.customSelections,
+                          quickOrderProduct.quantity,
+                          true
+                        );
+                        setQuickOrderProduct(null);
+                      }}
+                      className="w-full py-3 px-4 rounded-xl text-white font-extrabold text-xs sm:text-sm shadow-md transition hover:opacity-95 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>কার্টে যোগ করুন (৳ {quickProductSubtotal})</span>
+                    </button>
 
-              {/* Delivery Choice */}
-              <div>
-                <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                  ডেলিভারি লোকেশন:
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryLocation('inside_dhaka')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-between ${
-                      deliveryLocation === 'inside_dhaka'
-                        ? 'bg-teal-50 border-teal-600 text-teal-900 shadow-2xs'
-                        : 'bg-white border-stone-200 text-stone-700'
-                    }`}
-                  >
-                    <span>ঢাকার ভেতরে</span>
-                    <span>{page.deliveryCharges?.insideDhaka ?? 60}৳</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setQuickOrderProduct(prev => prev ? { ...prev, mode: 'order' } : null);
+                      }}
+                      className="w-full py-2 text-stone-600 hover:text-stone-900 font-bold text-xs flex items-center justify-center gap-1 transition"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      <span>সরাসরি ক্যাশ অন ডেলিভারিতে অর্ডার করতে চান? এখানে ক্লিক করুন</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="submit"
+                      form="quick-order-form"
+                      disabled={isSubmitting}
+                      className="w-full py-3.5 px-4 rounded-xl text-white font-extrabold text-xs sm:text-sm shadow-md transition hover:opacity-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      {isSubmitting ? (
+                        <span>অর্ডার সম্পন্ন হচ্ছে...</span>
+                      ) : (
+                        <>
+                          <Zap className="w-4 h-4 fill-current" />
+                          <span>ক্যাশ অন ডেলিভারিতে অর্ডার কনফার্ম করুন (৳ {quickGrandTotal})</span>
+                        </>
+                      )}
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() => setDeliveryLocation('outside_dhaka')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex items-center justify-between ${
-                      deliveryLocation === 'outside_dhaka'
-                        ? 'bg-teal-50 border-teal-600 text-teal-900 shadow-2xs'
-                        : 'bg-white border-stone-200 text-stone-700'
-                    }`}
-                  >
-                    <span>ঢাকার বাইরে</span>
-                    <span>{page.deliveryCharges?.outsideDhaka ?? 120}৳</span>
-                  </button>
-                </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleAddToCartWithOptions(
+                          quickOrderProduct.product,
+                          quickOrderProduct.size,
+                          quickOrderProduct.long,
+                          quickOrderProduct.color,
+                          quickOrderProduct.customSelections,
+                          quickOrderProduct.quantity,
+                          false
+                        );
+                        setQuickOrderProduct(null);
+                      }}
+                      className="w-full py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs border border-stone-200 transition flex items-center justify-center gap-1.5"
+                    >
+                      <ShoppingCart className="w-3.5 h-3.5 text-stone-500" />
+                      <span>কার্টে যোগ করে আরো কেনাকাটা করুন</span>
+                    </button>
+                  </>
+                )}
               </div>
-
-              {/* Form Fields */}
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                    আপনার নাম *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={customerName}
-                    onChange={e => setCustomerName(e.target.value)}
-                    placeholder="আপনার পুরো নাম দিন"
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                    মোবাইল নাম্বার *
-                  </label>
-                  <input
-                    type="tel"
-                    required
-                    value={customerPhone}
-                    onChange={e => setCustomerPhone(e.target.value)}
-                    placeholder="১১ ডিজিটের মোবাইল নাম্বার"
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-stone-700 mb-1">
-                    সম্পূর্ণ ডেলিভারি ঠিকানা *
-                  </label>
-                  <textarea
-                    required
-                    rows={2}
-                    value={customerAddress}
-                    onChange={e => setCustomerAddress(e.target.value)}
-                    placeholder="আপনার জেলা, উপজেলা/ থানা, গ্রাম/ বাসা"
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 resize-none"
-                  />
-                </div>
-              </div>
-
-              {/* Total Box */}
-              <div className="bg-stone-100 p-3 rounded-xl text-xs flex items-center justify-between font-bold">
-                <span>সর্বমোট পরিশোধযোগ্য বিল:</span>
-                <span className="text-base text-rose-700 font-mono">৳ {quickGrandTotal}</span>
-              </div>
-
-              {/* Submit */}
-              <div className="grid grid-cols-2 gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAddToCart(quickOrderProduct.product, true);
-                    setQuickOrderProduct(null);
-                  }}
-                  className="py-3 px-3 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs border border-stone-300 transition"
-                >
-                  কার্টে যোগ করে আরো কিনুন
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="py-3 px-3 rounded-xl text-white font-extrabold text-xs shadow transition hover:opacity-95 disabled:opacity-50"
-                  style={{ backgroundColor: themeColor }}
-                >
-                  {isSubmitting ? 'অর্ডার হচ্ছে...' : 'অর্ডার কনফার্ম করুন'}
-                </button>
-              </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ==================== PRODUCT QUICK VIEW MODAL ==================== */}
       {quickViewProduct && (() => {
@@ -1320,6 +1707,12 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
         const discountPct = quickViewProduct.oldPrice > quickViewProduct.price
           ? Math.round(((quickViewProduct.oldPrice - quickViewProduct.price) / quickViewProduct.oldPrice) * 100)
           : 0;
+
+        const viewImages = (quickViewProduct.images && quickViewProduct.images.length > 0)
+          ? quickViewProduct.images
+          : (quickViewProduct.galleryImages && quickViewProduct.galleryImages.length > 0)
+          ? quickViewProduct.galleryImages
+          : [quickViewProduct.image].filter(Boolean);
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
@@ -1333,39 +1726,43 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
               <button
                 type="button"
                 onClick={() => setQuickViewProduct(null)}
-                className="absolute top-3 right-3 z-20 p-2 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white transition backdrop-blur-xs shadow-md"
+                className="absolute top-3 right-3 z-30 p-2 rounded-full bg-stone-900/60 hover:bg-stone-900 text-white transition backdrop-blur-xs shadow-md"
               >
                 <X className="w-4 h-4" />
               </button>
 
               <div className="grid grid-cols-1 sm:grid-cols-2">
-                {/* Left: Product Image */}
-                <div className="relative aspect-square sm:aspect-auto bg-stone-100 min-h-[260px] sm:min-h-[380px]">
-                  <img
-                    src={quickViewProduct.image}
+                {/* Left: Product Images Slider */}
+                <div className="bg-stone-100 flex items-center justify-center p-2 sm:p-4">
+                  <ProductImageSlider
+                    images={viewImages}
                     alt={quickViewProduct.name}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
+                    aspectRatio="aspect-square"
+                    showThumbnails={viewImages.length > 1}
+                    showDots={viewImages.length > 1}
+                    className="w-full shadow-xs rounded-2xl overflow-hidden"
+                    badge={
+                      discountPct > 0 ? (
+                        <div
+                          className="text-white text-xs font-black px-2.5 py-1 rounded-full shadow"
+                          style={{ backgroundColor: themeColor }}
+                        >
+                          -{discountPct}% অফার
+                        </div>
+                      ) : undefined
+                    }
                   />
-                  {discountPct > 0 && (
-                    <div
-                      className="absolute top-3 left-3 text-white text-xs font-black px-2.5 py-1 rounded-full shadow"
-                      style={{ backgroundColor: themeColor }}
-                    >
-                      -{discountPct}% অফার
-                    </div>
-                  )}
-                  {quickViewProduct.category && (
-                    <div className="absolute bottom-3 left-3 bg-stone-900/80 text-stone-100 text-xs font-bold px-2.5 py-1 rounded-lg backdrop-blur-xs">
-                      {quickViewProduct.category}
-                    </div>
-                  )}
                 </div>
 
                 {/* Right: Product Details & Controls */}
                 <div className="p-5 sm:p-6 flex flex-col justify-between space-y-4">
                   <div className="space-y-3">
                     <div>
+                      {quickViewProduct.category && (
+                        <div className="text-[11px] font-bold text-teal-700 mb-1">
+                          {quickViewProduct.category}
+                        </div>
+                      )}
                       <h3 className="text-base sm:text-lg font-extrabold text-stone-900 leading-snug">
                         {quickViewProduct.name}
                       </h3>
@@ -1385,6 +1782,30 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                         )}
                       </div>
                     </div>
+
+                    {/* Colors if available */}
+                    {quickViewProduct.colors && quickViewProduct.colors.length > 0 && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-bold text-stone-700">কালার সমূহ:</span>
+                          <span className="text-stone-500 text-[11px]">{quickViewProduct.colors.length} টি কালার ভ্যারিয়েন্ট</span>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {quickViewProduct.colors.map(col => (
+                            <span
+                              key={col}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-stone-100 border border-stone-200 rounded-lg text-xs font-semibold text-stone-800"
+                            >
+                              <span
+                                className="w-3 h-3 rounded-full border border-stone-300"
+                                style={{ backgroundColor: getColorHex(col) }}
+                              />
+                              {col}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Dynamic Option Fields Selector */}
                     {getProductCustomFields(quickViewProduct).map(field => {
@@ -1437,8 +1858,9 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                     <button
                       type="button"
                       onClick={() => {
-                        handleDirectOrder(quickViewProduct);
+                        const targetProd = quickViewProduct;
                         setQuickViewProduct(null);
+                        openProductActionModal(targetProd, 'order');
                       }}
                       className="w-full py-3 px-4 rounded-xl text-white font-extrabold text-xs sm:text-sm shadow-md transition hover:opacity-95 flex items-center justify-center gap-2"
                       style={{ backgroundColor: themeColor }}
@@ -1450,8 +1872,9 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
                     <button
                       type="button"
                       onClick={() => {
-                        handleAddToCart(quickViewProduct, false);
+                        const targetProd = quickViewProduct;
                         setQuickViewProduct(null);
+                        openProductActionModal(targetProd, 'cart');
                       }}
                       className="w-full py-2.5 px-4 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold text-xs border border-stone-200 transition flex items-center justify-center gap-2"
                     >
@@ -1521,6 +1944,14 @@ export default function EcommerceStoreView({ page }: EcommerceStoreViewProps) {
           </div>
         </div>
       )}
+
+      {/* Customer Order History & Courier Report Modal */}
+      <CustomerOrderHistoryModal
+        isOpen={isOrderHistoryOpen}
+        onClose={() => setIsOrderHistoryOpen(false)}
+        initialPhone={orderHistoryPhone}
+        themeColor={themeColor}
+      />
 
       {/* E-Commerce Footer */}
       <footer className="text-center text-xs text-stone-500 py-6 border-t border-stone-200 mt-auto bg-white/80 w-full">

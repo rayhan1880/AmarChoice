@@ -1,59 +1,67 @@
-import { LandingPage, Order, AppSettings, PixelEventLog, OrderStatus, AdminUser, FraudControlConfig, BlockedCustomer, BlockedIpRecord, IncompleteOrder } from '../types.ts';
+import { LandingPage, Order, AppSettings, PixelEventLog, OrderStatus, AdminUser, FraudControlConfig, BlockedCustomer, BlockedIpRecord, IncompleteOrder, CourierCustomerHistory } from '../types.ts';
 
 const API_BASE = '/api';
+
+async function safeFetchJson<T>(url: string, options?: RequestInit, defaultErrMsg = 'Request failed'): Promise<T> {
+  const res = await fetch(url, options);
+  const contentType = res.headers.get('content-type') || '';
+  const text = await res.text();
+
+  if (!text || text.trim().startsWith('<') || contentType.includes('text/html')) {
+    throw new Error(`API_SERVER_UNAVAILABLE: Server returned HTML instead of JSON (HTTP ${res.status})`);
+  }
+
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`API_SERVER_UNAVAILABLE: Invalid JSON response`);
+  }
+
+  if (!res.ok) {
+    throw new Error(data.message || data.error || `${defaultErrMsg} (HTTP ${res.status})`);
+  }
+
+  return data as T;
+}
 
 export const api = {
   // Landing Pages
   async getLandingPages(): Promise<LandingPage[]> {
-    const res = await fetch(`${API_BASE}/landing-pages`);
-    if (!res.ok) throw new Error('Failed to fetch landing pages');
-    return res.json();
+    return safeFetchJson<LandingPage[]>(`${API_BASE}/landing-pages`, undefined, 'Failed to fetch landing pages');
   },
 
   async getLandingPage(slugOrId: string): Promise<LandingPage> {
-    const res = await fetch(`${API_BASE}/landing-pages/${slugOrId}`);
-    if (!res.ok) throw new Error('Failed to fetch landing page');
-    return res.json();
+    return safeFetchJson<LandingPage>(`${API_BASE}/landing-pages/${slugOrId}`, undefined, 'Failed to fetch landing page');
   },
 
   async createLandingPage(page: Partial<LandingPage>): Promise<LandingPage> {
-    const res = await fetch(`${API_BASE}/landing-pages`, {
+    return safeFetchJson<LandingPage>(`${API_BASE}/landing-pages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(page)
-    });
-    if (!res.ok) throw new Error('Failed to create landing page');
-    return res.json();
+    }, 'Failed to create landing page');
   },
 
   async updateLandingPage(id: string, page: Partial<LandingPage>): Promise<LandingPage> {
-    const res = await fetch(`${API_BASE}/landing-pages/${id}`, {
+    return safeFetchJson<LandingPage>(`${API_BASE}/landing-pages/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(page)
-    });
-    if (!res.ok) throw new Error('Failed to update landing page');
-    return res.json();
+    }, 'Failed to update landing page');
   },
 
   async setDefaultLandingPage(id: string): Promise<{ success: boolean; defaultPageId: string; defaultPage: LandingPage; landingPages: LandingPage[] }> {
-    const res = await fetch(`${API_BASE}/landing-pages/${id}/set-default`, {
+    return safeFetchJson<{ success: boolean; defaultPageId: string; defaultPage: LandingPage; landingPages: LandingPage[] }>(`${API_BASE}/landing-pages/${id}/set-default`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' }
-    });
-    if (!res.ok) throw new Error('Failed to set default landing page');
-    return res.json();
+    }, 'Failed to set default landing page');
   },
 
   async deleteLandingPage(id: string): Promise<{ success: boolean; message?: string }> {
-    const res = await fetch(`${API_BASE}/landing-pages/${id}`, {
+    return safeFetchJson<{ success: boolean; message?: string }>(`${API_BASE}/landing-pages/${id}`, {
       method: 'DELETE'
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to delete landing page');
-    }
-    return res.json();
+    }, 'Failed to delete landing page');
   },
 
   // Orders
@@ -61,48 +69,56 @@ export const api = {
     const query = new URLSearchParams();
     if (params?.landingPageId) query.set('landingPageId', params.landingPageId);
     if (params?.status) query.set('status', params.status);
-    const res = await fetch(`${API_BASE}/orders?${query.toString()}`);
-    if (!res.ok) throw new Error('Failed to fetch orders');
-    return res.json();
+    return safeFetchJson<Order[]>(`${API_BASE}/orders?${query.toString()}`, undefined, 'Failed to fetch orders');
   },
 
   async createOrder(orderData: Partial<Order>): Promise<Order> {
-    const res = await fetch(`${API_BASE}/orders`, {
+    return safeFetchJson<Order>(`${API_BASE}/orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderData)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || err.error || 'Failed to create order');
-    }
-    return res.json();
+    }, 'Failed to create order');
+  },
+
+  async updateOrder(id: string, orderData: Partial<Order>): Promise<Order> {
+    return safeFetchJson<Order>(`${API_BASE}/orders/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderData)
+    }, 'Failed to update order');
   },
 
   async updateOrderStatus(id: string, status: OrderStatus, notes?: string): Promise<Order> {
-    const res = await fetch(`${API_BASE}/orders/${id}/status`, {
+    return safeFetchJson<Order>(`${API_BASE}/orders/${id}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status, notes })
-    });
-    if (!res.ok) throw new Error('Failed to update order status');
-    return res.json();
+    }, 'Failed to update order status');
   },
 
   async deleteOrder(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`${API_BASE}/orders/${id}`, {
+    return safeFetchJson<{ success: boolean }>(`${API_BASE}/orders/${id}`, {
       method: 'DELETE'
-    });
-    if (!res.ok) throw new Error('Failed to delete order');
-    return res.json();
+    }, 'Failed to delete order');
+  },
+
+  async bulkActionOrders(payload: {
+    orderIds: string[];
+    action: 'status' | 'delete' | 'courier' | 'sync_courier';
+    status?: OrderStatus;
+    provider?: 'steadfast' | 'pathao';
+  }): Promise<{ success: boolean; count: number; orders: Order[]; message: string }> {
+    return safeFetchJson(`${API_BASE}/orders/bulk-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }, 'Failed to perform bulk action on orders');
   },
 
   async clearAllOrders(): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/orders/clear-all`, {
+    return safeFetchJson<{ success: boolean; message: string }>(`${API_BASE}/orders/clear-all`, {
       method: 'POST'
-    });
-    if (!res.ok) throw new Error('Failed to clear orders');
-    return res.json();
+    }, 'Failed to clear orders');
   },
 
   async clearDemoData(options?: {
@@ -117,13 +133,11 @@ export const api = {
     landingPages: LandingPage[];
     settings: AppSettings;
   }> {
-    const res = await fetch(`${API_BASE}/demo-data/clear`, {
+    return safeFetchJson(`${API_BASE}/demo-data/clear`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(options || {})
-    });
-    if (!res.ok) throw new Error('Failed to clear demo data');
-    return res.json();
+    }, 'Failed to clear demo data');
   },
 
   // Courier
@@ -131,15 +145,26 @@ export const api = {
     orderId: string,
     provider: 'steadfast' | 'pathao',
     deliveryFee?: number,
-    note?: string
-  ): Promise<{ success: boolean; courier: NonNullable<Order['courier']>; order: Order }> {
-    const res = await fetch(`${API_BASE}/orders/${orderId}/courier`, {
+    note?: string,
+    orderData?: Order
+  ): Promise<{ success: boolean; courier: NonNullable<Order['courier']>; order: Order; message?: string }> {
+    return safeFetchJson(`${API_BASE}/orders/${orderId}/courier`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider, deliveryFee, note })
-    });
-    if (!res.ok) throw new Error('Failed to send order to courier');
-    return res.json();
+      body: JSON.stringify({ provider, deliveryFee, note, orderData })
+    }, 'Failed to send order to courier');
+  },
+
+  async syncLocalOrders(localOrders: Order[]): Promise<{
+    success: boolean;
+    addedCount: number;
+    orders: Order[];
+  }> {
+    return safeFetchJson(`${API_BASE}/orders/sync-local`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ localOrders })
+    }, 'Failed to sync local orders');
   },
 
   async checkCourierStatus(orderId: string): Promise<{
@@ -151,9 +176,7 @@ export const api = {
     order?: Order;
     lastUpdated: string;
   }> {
-    const res = await fetch(`${API_BASE}/orders/${orderId}/courier-status`);
-    if (!res.ok) throw new Error('Failed to check courier status');
-    return res.json();
+    return safeFetchJson(`${API_BASE}/orders/${orderId}/courier-status`, undefined, 'Failed to check courier status');
   },
 
   async syncAllCouriers(): Promise<{
@@ -162,11 +185,35 @@ export const api = {
     orders: Order[];
     message: string;
   }> {
-    const res = await fetch(`${API_BASE}/orders/sync-all-couriers`, {
+    return safeFetchJson(`${API_BASE}/orders/sync-all-couriers`, {
       method: 'POST'
-    });
-    if (!res.ok) throw new Error('Failed to sync all courier orders');
-    return res.json();
+    }, 'Failed to sync all courier orders');
+  },
+
+  async testSteadfast(credentials?: {
+    apiKey?: string;
+    secretKey?: string;
+    baseUrl?: string;
+  }): Promise<{ success: boolean; balance?: number; message?: string; error?: string }> {
+    return safeFetchJson(`${API_BASE}/courier/test-steadfast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials || {})
+    }, 'Failed to test Steadfast connection');
+  },
+
+  async checkCustomerCourier(phone: string): Promise<{ success: boolean; history: CourierCustomerHistory; error?: string }> {
+    return safeFetchJson(`${API_BASE}/courier/check-customer/${encodeURIComponent(phone)}`, {
+      method: 'GET'
+    }, 'Failed to fetch courier customer history');
+  },
+
+  async checkCustomersCourierBulk(phones: string[]): Promise<{ success: boolean; histories: Record<string, CourierCustomerHistory>; error?: string }> {
+    return safeFetchJson(`${API_BASE}/courier/check-customers-bulk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phones })
+    }, 'Failed to bulk check courier customer histories');
   },
 
   // SMS
@@ -174,14 +221,50 @@ export const api = {
     orderId: string,
     message: string,
     customPhone?: string
-  ): Promise<{ success: boolean; log: NonNullable<Order['smsLogs']>[number] }> {
-    const res = await fetch(`${API_BASE}/orders/${orderId}/send-sms`, {
+  ): Promise<{ success: boolean; log: NonNullable<Order['smsLogs']>[number]; order?: Order; error?: string; gatewayResponse?: string }> {
+    return safeFetchJson(`${API_BASE}/orders/${orderId}/send-sms`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, customPhone })
-    });
-    if (!res.ok) throw new Error('Failed to send SMS');
-    return res.json();
+    }, 'Failed to send SMS');
+  },
+
+  async sendOrderConfirmSms(
+    orderId: string,
+    payload?: { customPhone?: string; customMessage?: string; updateStatusToConfirmed?: boolean }
+  ): Promise<{ success: boolean; message: string; log?: NonNullable<Order['smsLogs']>[number]; order?: Order; error?: string; gatewayResponse?: string }> {
+    return safeFetchJson(`${API_BASE}/orders/${orderId}/send-confirm-sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload || {})
+    }, 'Failed to send confirmation SMS');
+  },
+
+  async bulkSendConfirmSms(
+    orderIds: string[],
+    updateStatusToConfirmed = false
+  ): Promise<{ success: boolean; count: number; failedCount: number; message: string; orders?: Order[]; errors?: string[] }> {
+    return safeFetchJson(`${API_BASE}/orders/bulk-confirm-sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orderIds, updateStatusToConfirmed })
+    }, 'Failed to bulk send confirmation SMS');
+  },
+
+  async sendTestSms(
+    phone: string,
+    message: string,
+    config?: Partial<AppSettings['smsGateway']>
+  ): Promise<{ success: boolean; gatewayResponse: string; error?: string; serverIp?: string }> {
+    return safeFetchJson(`${API_BASE}/sms/send-test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, message, config })
+    }, 'Failed to send test SMS');
+  },
+
+  async getServerIp(): Promise<{ ip: string }> {
+    return safeFetchJson(`${API_BASE}/server-ip`, {}, 'Failed to get server IP');
   },
 
   // Google Sheets Integration
@@ -190,58 +273,43 @@ export const api = {
     webhookUrl?: string,
     sheetName?: string
   ): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/landing-pages/${landingPageId}/test-sheet`, {
+    return safeFetchJson(`${API_BASE}/landing-pages/${landingPageId}/test-sheet`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ webhookUrl, sheetName })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'গুগল শিটে টেস্ট ডাটা পাঠানো ব্যর্থ হয়েছে');
-    return data;
+    }, 'গুগল শিটে টেস্ট ডাটা পাঠানো ব্যর্থ হয়েছে');
   },
 
   async syncOrderToSheet(orderId: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/orders/${orderId}/sync-sheet`, {
+    return safeFetchJson(`${API_BASE}/orders/${orderId}/sync-sheet`, {
       method: 'POST'
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'গুগল শিটে অর্ডার সিঙ্ক করা যায়নি');
-    return data;
+    }, 'গুগল শিটে অর্ডার সিঙ্ক করা যায়নি');
   },
 
   async syncAllOrdersToSheet(
     landingPageId: string
   ): Promise<{ success: boolean; count: number; message: string }> {
-    const res = await fetch(`${API_BASE}/landing-pages/${landingPageId}/sync-all-orders`, {
+    return safeFetchJson(`${API_BASE}/landing-pages/${landingPageId}/sync-all-orders`, {
       method: 'POST'
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'সকল অর্ডার গুগল শিটে পাঠানো ব্যর্থ হয়েছে');
-    return data;
+    }, 'সকল অর্ডার গুগল শিটে পাঠানো ব্যর্থ হয়েছে');
   },
 
   // Settings
   async getSettings(): Promise<AppSettings> {
-    const res = await fetch(`${API_BASE}/settings`);
-    if (!res.ok) throw new Error('Failed to fetch settings');
-    return res.json();
+    return safeFetchJson<AppSettings>(`${API_BASE}/settings`, undefined, 'Failed to fetch settings');
   },
 
   async updateSettings(settings: Partial<AppSettings>): Promise<AppSettings> {
-    const res = await fetch(`${API_BASE}/settings`, {
+    return safeFetchJson<AppSettings>(`${API_BASE}/settings`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(settings)
-    });
-    if (!res.ok) throw new Error('Failed to update settings');
-    return res.json();
+    }, 'Failed to update settings');
   },
 
   // Facebook Pixel & TikTok Conversion API (CAPI) Logs
   async getPixelLogs(): Promise<PixelEventLog[]> {
-    const res = await fetch(`${API_BASE}/pixel-logs`);
-    if (!res.ok) throw new Error('Failed to fetch pixel logs');
-    return res.json();
+    return safeFetchJson<PixelEventLog[]>(`${API_BASE}/pixel-logs`, undefined, 'Failed to fetch pixel logs');
   },
 
   async logPixelEvent(params: {
@@ -260,186 +328,132 @@ export const api = {
     };
     sourceUrl?: string;
   }): Promise<PixelEventLog> {
-    const res = await fetch(`${API_BASE}/pixel-logs`, {
+    const res = await safeFetchJson<{ success: boolean; log: PixelEventLog }>(`${API_BASE}/pixel-logs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
-    });
-    if (!res.ok) throw new Error('Failed to log pixel event');
-    const json = await res.json();
-    return json.log;
+    }, 'Failed to log pixel event');
+    return res.log;
   },
 
   async testPixelCapiEvent(eventType = 'Purchase'): Promise<{ success: boolean; log: PixelEventLog }> {
-    const res = await fetch(`${API_BASE}/pixel/test-event`, {
+    return safeFetchJson(`${API_BASE}/pixel/test-event`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ eventType })
-    });
-    if (!res.ok) throw new Error('Failed to send test event');
-    return res.json();
+    }, 'Failed to send test event');
   },
 
   // Users & Auth
   async login(email: string, password: string): Promise<{ success: boolean; user: AdminUser; token: string }> {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    return safeFetchJson(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'লগইন ব্যর্থ হয়েছে');
-    }
-    return data;
+    }, 'লগইন ব্যর্থ হয়েছে');
   },
 
   async getUsers(): Promise<AdminUser[]> {
-    const res = await fetch(`${API_BASE}/users`);
-    if (!res.ok) throw new Error('Failed to fetch users');
-    return res.json();
+    return safeFetchJson<AdminUser[]>(`${API_BASE}/users`, undefined, 'Failed to fetch users');
   },
 
   async createUser(userData: { name: string; email: string; password: string; role?: string }): Promise<{ success: boolean; user: AdminUser }> {
-    const res = await fetch(`${API_BASE}/users`, {
+    return safeFetchJson(`${API_BASE}/users`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(userData)
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to create user');
-    }
-    return data;
+    }, 'Failed to create user');
   },
 
   async deleteUser(id: string): Promise<{ success: boolean; message?: string }> {
-    const res = await fetch(`${API_BASE}/users/${id}`, {
+    return safeFetchJson(`${API_BASE}/users/${id}`, {
       method: 'DELETE'
-    });
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to delete user');
-    }
-    return data;
+    }, 'Failed to delete user');
   },
 
   // Fraud Control & Daily Order Limit
   async getFraudControl(): Promise<FraudControlConfig> {
-    const res = await fetch(`${API_BASE}/fraud-control`);
-    if (!res.ok) throw new Error('Failed to fetch fraud control settings');
-    return res.json();
+    return safeFetchJson<FraudControlConfig>(`${API_BASE}/fraud-control`, undefined, 'Failed to fetch fraud control settings');
   },
 
   async updateFraudControl(config: Partial<FraudControlConfig>): Promise<FraudControlConfig> {
-    const res = await fetch(`${API_BASE}/fraud-control`, {
+    return safeFetchJson<FraudControlConfig>(`${API_BASE}/fraud-control`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config)
-    });
-    if (!res.ok) throw new Error('Failed to update fraud control settings');
-    return res.json();
+    }, 'Failed to update fraud control settings');
   },
 
   async blockCustomer(data: { phone: string; name?: string; reason?: string; ip?: string }): Promise<BlockedCustomer> {
-    const res = await fetch(`${API_BASE}/fraud-control/block`, {
+    return safeFetchJson<BlockedCustomer>(`${API_BASE}/fraud-control/block`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || result.error || 'Failed to block customer');
-    return result;
+    }, 'Failed to block customer');
   },
 
   async unblockCustomer(phone: string): Promise<{ success: boolean; message?: string }> {
-    const res = await fetch(`${API_BASE}/fraud-control/block/${encodeURIComponent(phone)}`, {
+    return safeFetchJson(`${API_BASE}/fraud-control/block/${encodeURIComponent(phone)}`, {
       method: 'DELETE'
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || result.error || 'Failed to unblock customer');
-    return result;
+    }, 'Failed to unblock customer');
   },
 
   async blockIp(data: { ip: string; name?: string; reason?: string; associatedPhone?: string }): Promise<BlockedIpRecord> {
-    const res = await fetch(`${API_BASE}/fraud-control/block-ip`, {
+    return safeFetchJson<BlockedIpRecord>(`${API_BASE}/fraud-control/block-ip`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || result.error || 'Failed to block IP');
-    return result;
+    }, 'Failed to block IP');
   },
 
   async unblockIp(ip: string): Promise<{ success: boolean; message?: string }> {
-    const res = await fetch(`${API_BASE}/fraud-control/block-ip/${encodeURIComponent(ip)}`, {
+    return safeFetchJson(`${API_BASE}/fraud-control/block-ip/${encodeURIComponent(ip)}`, {
       method: 'DELETE'
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message || result.error || 'Failed to unblock IP');
-    return result;
+    }, 'Failed to unblock IP');
   },
 
   // Incomplete / Abandoned Checkout Orders
   async getIncompleteOrders(): Promise<IncompleteOrder[]> {
-    const res = await fetch(`${API_BASE}/incomplete-orders`);
-    if (!res.ok) throw new Error('Failed to fetch incomplete orders');
-    return res.json();
+    return safeFetchJson<IncompleteOrder[]>(`${API_BASE}/incomplete-orders`, undefined, 'Failed to fetch incomplete orders');
   },
 
   async saveIncompleteOrder(data: Partial<IncompleteOrder>): Promise<IncompleteOrder> {
-    const res = await fetch(`${API_BASE}/incomplete-orders`, {
+    return safeFetchJson<IncompleteOrder>(`${API_BASE}/incomplete-orders`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || 'Failed to save incomplete order');
-    }
-    return res.json();
+      body: JSON.stringify(data),
+      keepalive: true
+    }, 'Failed to save incomplete order');
   },
 
   async updateIncompleteOrder(
     id: string,
-    data: {
-      status?: IncompleteOrder['status'];
-      notes?: string;
+    data: Partial<IncompleteOrder> & {
       contactLog?: { method: 'call' | 'sms' | 'whatsapp'; note?: string };
     }
   ): Promise<IncompleteOrder> {
-    const res = await fetch(`${API_BASE}/incomplete-orders/${id}`, {
+    return safeFetchJson<IncompleteOrder>(`${API_BASE}/incomplete-orders/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
-    });
-    if (!res.ok) throw new Error('Failed to update incomplete order');
-    return res.json();
+    }, 'Failed to update incomplete order');
   },
 
   async convertIncompleteOrder(id: string): Promise<{ success: boolean; order: Order; incompleteOrder: IncompleteOrder }> {
-    const res = await fetch(`${API_BASE}/incomplete-orders/${id}/convert`, {
+    return safeFetchJson(`${API_BASE}/incomplete-orders/${id}/convert`, {
       method: 'POST'
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Failed to convert incomplete order');
-    return result;
+    }, 'Failed to convert incomplete order');
   },
 
   async deleteIncompleteOrder(id: string): Promise<{ success: boolean }> {
-    const res = await fetch(`${API_BASE}/incomplete-orders/${id}`, {
+    return safeFetchJson(`${API_BASE}/incomplete-orders/${id}`, {
       method: 'DELETE'
-    });
-    if (!res.ok) throw new Error('Failed to delete incomplete order');
-    return res.json();
+    }, 'Failed to delete incomplete order');
   },
 
   async clearAllIncompleteOrders(): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/incomplete-orders/clear-all`, {
+    return safeFetchJson(`${API_BASE}/incomplete-orders/clear-all`, {
       method: 'POST'
-    });
-    if (!res.ok) throw new Error('Failed to clear incomplete orders');
-    return res.json();
+    }, 'Failed to clear incomplete orders');
   }
 };

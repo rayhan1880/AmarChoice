@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CustomerHistorySummary, normalizePhoneNumber } from '../../utils/customerHistory.ts';
-import { Order, OrderStatus } from '../../types.ts';
+import { Order, OrderStatus, CourierCustomerHistory } from '../../types.ts';
 import { useApp } from '../../context/AppContext.tsx';
+import { api } from '../../services/api.ts';
 import { AdminLanguage, toLocalizedNumber, toLocalizedCurrency, toLocalizedDate } from '../../utils/translations.ts';
 import {
   X,
@@ -25,11 +26,13 @@ import {
   ShieldAlert,
   Package,
   Layers,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 
 interface CustomerHistoryModalProps {
   summary: CustomerHistorySummary;
+  courierHistory?: CourierCustomerHistory;
   adminLanguage: AdminLanguage;
   onClose: () => void;
   onViewOrderDetails?: (order: Order) => void;
@@ -37,6 +40,7 @@ interface CustomerHistoryModalProps {
 
 export default function CustomerHistoryModal({
   summary,
+  courierHistory,
   adminLanguage,
   onClose,
   onViewOrderDetails
@@ -58,6 +62,34 @@ export default function CustomerHistoryModal({
   const [activeTab, setActiveTab] = useState<'orders' | 'incomplete'>('orders');
   const [convertingId, setConvertingId] = useState<string | null>(null);
   const [isBlocking, setIsBlocking] = useState(false);
+
+  // Live Courier stats state
+  const [courierData, setCourierData] = useState<CourierCustomerHistory | null>(courierHistory || null);
+  const [isLoadingCourier, setIsLoadingCourier] = useState<boolean>(!courierHistory);
+  const [courierError, setCourierError] = useState<string | null>(null);
+
+  const fetchCourierData = async () => {
+    setIsLoadingCourier(true);
+    setCourierError(null);
+    try {
+      const res = await api.checkCustomerCourier(summary.phone);
+      if (res.success && res.history) {
+        setCourierData(res.history);
+      }
+    } catch (err: any) {
+      setCourierError(err?.message || (isBn ? 'কুরিয়ার হিস্ট্রি লোড করা সম্ভব হয়নি' : 'Failed to load courier stats'));
+    } finally {
+      setIsLoadingCourier(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!courierHistory) {
+      fetchCourierData();
+    } else {
+      setCourierData(courierHistory);
+    }
+  }, [summary.phone, courierHistory]);
 
   // Normalize phone for comparison
   const normPhone = normalizePhoneNumber(summary.phone);
@@ -328,17 +360,175 @@ export default function CustomerHistoryModal({
 
         {/* Content Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+          {/* Courier-Specific Order History (Steadfast Courier Delivery & Cancellation Record) */}
+          <div className="bg-gradient-to-br from-stone-900 to-stone-850 text-white rounded-2xl p-4 sm:p-5 shadow-md border border-stone-700">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3 pb-3 border-b border-stone-700/80">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center border border-rose-500/30">
+                  <Truck className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>{isBn ? 'কুরিয়ার ডেলিভারি ও ক্যানসেল হিস্ট্রি' : 'Courier Delivery & Cancellation History'}</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-stone-700/80 text-rose-300 border border-stone-600">
+                      {courierData?.isLiveCourier ? 'Steadfast Live API' : (isBn ? 'স্টোর অর্ডার রেকর্ড' : 'Store Records')}
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-stone-300 mt-0.5">
+                    {isBn
+                      ? `কাস্টমারের ফোন নাম্বার (${summary.phone}) দিয়ে কুরিয়ারে মোট ডেলিভারি ও ক্যানসেলের রেকর্ড`
+                      : `Total parcels delivered vs cancelled for phone (${summary.phone}) across couriers`}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchCourierData}
+                disabled={isLoadingCourier}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-200 text-xs font-semibold transition disabled:opacity-50"
+                title={isBn ? 'কুরিয়ার থেকে সর্বশেষ ডাটা রিফ্রেশ করুন' : 'Refresh courier stats'}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCourier ? 'animate-spin text-rose-400' : ''}`} />
+                <span>{isLoadingCourier ? (isBn ? 'চেক হচ্ছে...' : 'Checking...') : (isBn ? 'রিফ্রেশ' : 'Refresh')}</span>
+              </button>
+            </div>
+
+            {isLoadingCourier ? (
+              <div className="py-6 flex items-center justify-center gap-2 text-stone-300 text-xs">
+                <RefreshCw className="w-4 h-4 animate-spin text-rose-400" />
+                <span>{isBn ? 'কুরিয়ার সার্ভার থেকে কাস্টমারের ডেলিভারি ও ক্যানসেল হিস্ট্রি লোড হচ্ছে...' : 'Fetching customer courier stats...'}</span>
+              </div>
+            ) : courierData ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {/* Total Parcels */}
+                  <div className="bg-stone-800/90 border border-stone-700 rounded-xl p-3 text-center">
+                    <span className="text-[11px] font-medium text-stone-300 block">
+                      {isBn ? 'কুরিয়ারে মোট পার্সেল' : 'Total Parcels'}
+                    </span>
+                    <span className="text-2xl font-black text-white block mt-0.5">
+                      {toLocalizedNumber(courierData.totalParcels, adminLanguage)}
+                    </span>
+                    <span className="text-[10px] text-stone-400">
+                      {isBn ? 'সকল মার্চেন্ট মিলে' : 'across all merchants'}
+                    </span>
+                  </div>
+
+                  {/* Total Delivered */}
+                  <div className="bg-emerald-950/40 border border-emerald-800/60 rounded-xl p-3 text-center">
+                    <span className="text-[11px] font-medium text-emerald-300 flex items-center justify-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      {isBn ? 'সফল ডেলিভারি' : 'Delivered'}
+                    </span>
+                    <span className="text-2xl font-black text-emerald-400 block mt-0.5">
+                      {toLocalizedNumber(courierData.totalDelivered, adminLanguage)}
+                    </span>
+                    <span className="text-[10px] text-emerald-300/80 font-medium">
+                      {isBn ? 'কুরিয়ারে রিসিভড' : 'Completed'}
+                    </span>
+                  </div>
+
+                  {/* Total Cancelled / Returned */}
+                  <div className="bg-rose-950/40 border border-rose-800/60 rounded-xl p-3 text-center">
+                    <span className="text-[11px] font-medium text-rose-300 flex items-center justify-center gap-1">
+                      <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                      {isBn ? 'ক্যানসেল / রিটার্ন' : 'Cancelled / Return'}
+                    </span>
+                    <span className="text-2xl font-black text-rose-400 block mt-0.5">
+                      {toLocalizedNumber(courierData.totalCancelled, adminLanguage)}
+                    </span>
+                    <span className="text-[10px] text-rose-300/80 font-medium">
+                      {isBn ? 'পার্সেল ফেরত বা বাতিল' : 'Cancelled in courier'}
+                    </span>
+                  </div>
+
+                  {/* Courier Success Rate & Risk Level */}
+                  <div className={`border rounded-xl p-3 text-center ${
+                    courierData.level === 'risk' || (courierData.totalCancelled > courierData.totalDelivered && courierData.totalCancelled >= 2)
+                      ? 'bg-rose-900/30 border-rose-700/80'
+                      : courierData.level === 'caution'
+                      ? 'bg-amber-900/30 border-amber-700/80'
+                      : 'bg-emerald-900/30 border-emerald-700/80'
+                  }`}>
+                    <span className="text-[11px] font-medium text-stone-300 block">
+                      {isBn ? 'সাকসেস রেট ও ঝুঁকি' : 'Success Rate & Risk'}
+                    </span>
+                    <span className="text-2xl font-black text-white block mt-0.5">
+                      {toLocalizedNumber(courierData.deliveryRate, adminLanguage)}%
+                    </span>
+                    <div className="mt-1 flex items-center justify-center gap-1">
+                      {courierData.level === 'risk' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-rose-600 text-white rounded-md">
+                          {isBn ? 'উচ্চ ঝুঁকি (High Risk)' : 'High Risk'}
+                        </span>
+                      )}
+                      {courierData.level === 'caution' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-amber-500 text-white rounded-md">
+                          {isBn ? 'সতর্কতা (Caution)' : 'Caution'}
+                        </span>
+                      )}
+                      {courierData.level === 'safe' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-600 text-white rounded-md">
+                          {isBn ? 'নিরাপদ কাস্টমার' : 'Safe Customer'}
+                        </span>
+                      )}
+                      {courierData.level === 'new' && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-600 text-white rounded-md">
+                          {isBn ? 'নতুন কাস্টমার' : 'New Customer'}
+                        </span>
+                      )}
+                      {courierData.score !== undefined && (
+                        <span className="text-[10px] text-stone-300 font-mono">
+                          ({toLocalizedNumber(courierData.score, adminLanguage)}/100)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Courier Advisory Banner */}
+                {courierData.totalCancelled > courierData.totalDelivered && courierData.totalCancelled >= 2 && (
+                  <div className="p-3 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-start gap-2.5 text-xs text-rose-200">
+                    <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="font-bold text-white block">
+                        {isBn ? 'সতর্কতা: কুরিয়ারে অধিক ক্যানসেলের রেকর্ড রয়েছে!' : 'Warning: High Cancellation Rate in Courier!'}
+                      </strong>
+                      <p className="mt-0.5 text-rose-300 leading-relaxed">
+                        {isBn
+                          ? `এই কাস্টমারের কুরিয়ারে মোট ${toLocalizedNumber(courierData.totalParcels, 'bn')} টি পার্সেলের মধ্যে ${toLocalizedNumber(courierData.totalCancelled, 'bn')} টি পার্সেল বাতিল বা রিটার্ন হয়েছে। পার্সেল পাঠানোর পূর্বে কল করে অর্ডার কনফার্ম করে নিন অথবা অগ্রিম ডেলিভারি চার্জ গ্রহণ করুন।`
+                          : `This customer has cancelled ${courierData.totalCancelled} out of ${courierData.totalParcels} parcels in courier. Consider confirming via phone call or taking advance delivery charge.`}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Courier Note / Remarks */}
+                {courierData.notice && (
+                  <p className="text-[10px] text-stone-400 italic">
+                    ℹ️ {courierData.notice}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="py-3 text-center text-stone-400 text-xs">
+                {courierError || (isBn ? 'কুরিয়ার হিস্ট্রি পাওয়া যায়নি।' : 'No courier records found.')}
+              </div>
+            )}
+          </div>
+
           {/* Quick Metrics Cards */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 text-center">
               <span className="text-[11px] font-medium text-stone-500 block">
-                {isBn ? 'মোট অর্ডার' : 'Total Orders'}
+                {isBn ? 'এই শপে মোট অর্ডার' : 'Store Total Orders'}
               </span>
               <span className="text-xl font-black text-stone-900 block mt-0.5">
                 {toLocalizedNumber(summary.totalOrders, adminLanguage)}
               </span>
               <span className="text-[10px] text-stone-400">
-                {isBn ? 'এই নাম্বার হতে' : 'from this number'}
+                {isBn ? 'এই ওয়েবসাইট হতে' : 'from this store'}
               </span>
             </div>
 

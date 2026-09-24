@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { IncompleteOrder } from '../../types.ts';
-import { translations } from '../../utils/translations.ts';
+import { translations, formatOrderRelativeTime } from '../../utils/translations.ts';
 import {
   ShoppingBag,
   Phone,
@@ -27,8 +27,10 @@ import {
   Layers,
   Sparkles,
   User,
-  ArrowRight
+  ArrowRight,
+  Pencil
 } from 'lucide-react';
+import { IncompleteOrderEditModal } from './IncompleteOrderEditModal.tsx';
 
 function WhatsAppIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
@@ -57,6 +59,7 @@ export default function IncompleteOrdersView() {
   const [statusFilter, setStatusFilter] = useState<'all' | IncompleteOrder['status']>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [convertingId, setConvertingId] = useState<string | null>(null);
+  const [editingIncompleteOrder, setEditingIncompleteOrder] = useState<IncompleteOrder | null>(null);
   const [convertedOrderResult, setConvertedOrderResult] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -89,12 +92,37 @@ export default function IncompleteOrdersView() {
   const filteredOrders = incompleteOrders.filter(order => {
     if (statusFilter !== 'all' && order.status !== statusFilter) return false;
     if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        order.customerPhone.toLowerCase().includes(q) ||
-        order.customerName.toLowerCase().includes(q) ||
-        (order.landingPageTitle && order.landingPageTitle.toLowerCase().includes(q))
+      const q = searchQuery.toLowerCase().trim();
+      const bnToEn: Record<string, string> = {
+        '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4',
+        '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
+      };
+      const enQ = q.replace(/[০-৯]/g, d => bnToEn[d] || d);
+      const cleanQDigits = enQ.replace(/\D/g, '');
+      const orderPhoneDigits = (order.customerPhone || '').replace(/[০-৯]/g, d => bnToEn[d] || d).replace(/\D/g, '');
+
+      const matchPhone = (cleanQDigits.length >= 3 && orderPhoneDigits.includes(cleanQDigits)) ||
+                         order.customerPhone.toLowerCase().includes(q) ||
+                         order.customerPhone.toLowerCase().includes(enQ);
+
+      const matchName = order.customerName.toLowerCase().includes(q) ||
+                        order.customerName.toLowerCase().includes(enQ);
+
+      const matchAddress = Boolean(order.customerAddress && (
+        order.customerAddress.toLowerCase().includes(q) ||
+        order.customerAddress.toLowerCase().includes(enQ)
+      ));
+
+      const matchProduct = Boolean(
+        order.items?.some(i => i.variantName?.toLowerCase().includes(q) || i.variantName?.toLowerCase().includes(enQ))
       );
+
+      const matchPage = Boolean(order.landingPageTitle && (
+        order.landingPageTitle.toLowerCase().includes(q) ||
+        order.landingPageTitle.toLowerCase().includes(enQ)
+      ));
+
+      return matchPhone || matchName || matchAddress || matchProduct || matchPage;
     }
     return true;
   });
@@ -317,7 +345,7 @@ export default function IncompleteOrdersView() {
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            {incompleteOrders.length > 0 && (
+            {!settings?.isDemoDataRemoved && incompleteOrders.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowClearModal(true)}
@@ -398,15 +426,20 @@ export default function IncompleteOrdersView() {
                             {isBn ? 'ঠিকানা টাইপ করার আগে বের হয়েছে' : 'No address typed'}
                           </span>
                         )}
-                        <p className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
-                          <Clock className="w-2.5 h-2.5" />
-                          {new Date(order.createdAt).toLocaleDateString(isBn ? 'bn-BD' : 'en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
-                        </p>
+                        {(() => {
+                          const rel = formatOrderRelativeTime(order.createdAt, adminLanguage);
+                          return (
+                            <p
+                              className={`text-[10px] mt-1 flex items-center gap-1 ${
+                                rel.isRecent ? 'text-amber-700 font-bold' : 'text-slate-400'
+                              }`}
+                              title={rel.fullTooltip}
+                            >
+                              <Clock className="w-2.5 h-2.5 shrink-0 text-amber-600" />
+                              <span>{rel.display}</span>
+                            </p>
+                          );
+                        })()}
                       </div>
                     </td>
 
@@ -515,6 +548,16 @@ export default function IncompleteOrdersView() {
                         >
                           <Phone className="w-4 h-4" />
                         </a>
+
+                        {/* Edit Info */}
+                        <button
+                          type="button"
+                          onClick={() => setEditingIncompleteOrder(order)}
+                          className="p-2 bg-amber-50 text-amber-700 hover:bg-amber-600 hover:text-white rounded-lg transition border border-amber-200 cursor-pointer"
+                          title={isBn ? 'গ্রাহকের তথ্য ও অর্ডার এডিট করুন' : 'Edit Customer Info & Order'}
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
 
                         {/* Add Log / Note */}
                         <button
@@ -1066,6 +1109,16 @@ export default function IncompleteOrdersView() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Incomplete Order Edit Modal */}
+      {editingIncompleteOrder && (
+        <IncompleteOrderEditModal
+          order={editingIncompleteOrder}
+          isOpen={Boolean(editingIncompleteOrder)}
+          onClose={() => setEditingIncompleteOrder(null)}
+          onConvert={(id) => handleConvert(id)}
+        />
       )}
     </div>
   );

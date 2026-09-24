@@ -56,7 +56,17 @@ export const translations = {
     // Orders Management
     ordersTitle: 'অর্ডার ম্যানেজমেন্ট',
     ordersSubtitle: 'মোট {total} টি অর্ডারের মধ্যে ফিল্টার অনুযায়ী {filtered} টি দেখাচ্ছে',
-    ordersSearchPlaceholder: 'অর্ডার আইডি, কাস্টমার নাম বা মোবাইল নাম্বার...',
+    ordersSearchPlaceholder: 'অর্ডার আইডি (#123), ফোন নাম্বার, কাস্টমার নাম, কুরিয়ার ট্র্যাকিং কোড বা পণ্য দিয়ে সার্চ করুন...',
+    ordersSearchAllScope: 'সব কিছু',
+    ordersSearchPhoneScope: 'মোবাইল নাম্বার',
+    ordersSearchIdScope: 'অর্ডার আইডি',
+    ordersSearchCourierScope: 'কুরিয়ার ট্র্যাকিং',
+    ordersSearchCustomerScope: 'কাস্টমার নাম',
+    ordersSearchProductScope: 'পণ্য',
+    ordersSearchAddressScope: 'ঠিকানা',
+    ordersSearchAllDates: 'সকল তারিখের অর্ডারে খুঁজুন',
+    ordersSearchMatchesFound: '{count} টি অর্ডার মিলেছে',
+    ordersSearchClear: 'সার্চ মুছুন',
     ordersSourceLabel: 'অন-পেইজ:',
     ordersAllPages: '🌐 সকল অন-পেইজ ও শপ (All Pages & Stores)',
     ordersFilterByPage: 'অন-পেইজ দিয়ে ফিল্টার:',
@@ -257,7 +267,17 @@ export const translations = {
     // Orders Management
     ordersTitle: 'Order Management',
     ordersSubtitle: 'Showing {filtered} of {total} total orders based on filters',
-    ordersSearchPlaceholder: 'Search order ID, customer name or mobile number...',
+    ordersSearchPlaceholder: 'Search by Order ID (#123), Phone, Customer Name, Courier Tracking, or Product...',
+    ordersSearchAllScope: 'All Fields',
+    ordersSearchPhoneScope: 'Phone Number',
+    ordersSearchIdScope: 'Order ID',
+    ordersSearchCourierScope: 'Courier Tracking',
+    ordersSearchCustomerScope: 'Customer Name',
+    ordersSearchProductScope: 'Product',
+    ordersSearchAddressScope: 'Address',
+    ordersSearchAllDates: 'Search all dates',
+    ordersSearchMatchesFound: '{count} orders found',
+    ordersSearchClear: 'Clear search',
     ordersSourceLabel: 'Source:',
     ordersAllPages: '🌐 All Pages & Stores',
     ordersFilterByPage: 'Filter by Page:',
@@ -444,3 +464,59 @@ export function getLocalizedDayName(date: Date | string, lang: AdminLanguage): s
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   return days[d.getDay()];
 }
+
+/**
+ * Shows relative time (e.g. "৫ মিনিট আগে", "১ ঘণ্টা ২০ মিনিট আগে") for orders placed within 24 hours.
+ * For orders older than 24 hours, displays the formatted date and time.
+ */
+export function formatOrderRelativeTime(date: Date | string, lang: AdminLanguage = 'bn'): { display: string; isRecent: boolean; fullTooltip: string } {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  if (isNaN(d.getTime())) return { display: '', isRecent: false, fullTooltip: '' };
+
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHours = Math.floor(diffMin / 60);
+
+  const fullTooltip = `${toLocalizedDate(d, lang)} ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+
+  // If order was placed in the future or under 1 minute
+  if (diffMin < 1) {
+    const text = lang === 'bn' ? 'এইমাত্র' : 'Just now';
+    return { display: text, isRecent: true, fullTooltip };
+  }
+
+  // Under 24 hours: show minutes/hours ago
+  if (diffHours < 24) {
+    if (diffHours === 0) {
+      const minStr = toLocalizedNumber(diffMin, lang);
+      const text = lang === 'bn' ? `${minStr} মিনিট আগে` : `${minStr} mins ago`;
+      return { display: text, isRecent: true, fullTooltip };
+    }
+
+    const remainingMins = diffMin % 60;
+    const hoursStr = toLocalizedNumber(diffHours, lang);
+    const minsStr = toLocalizedNumber(remainingMins, lang);
+
+    if (remainingMins === 0) {
+      const text = lang === 'bn' ? `${hoursStr} ঘণ্টা আগে` : `${hoursStr} hr${diffHours > 1 ? 's' : ''} ago`;
+      return { display: text, isRecent: true, fullTooltip };
+    }
+
+    const text = lang === 'bn'
+      ? `${hoursStr} ঘণ্টা ${minsStr} মিনিট আগে`
+      : `${hoursStr}h ${minsStr}m ago`;
+    return { display: text, isRecent: true, fullTooltip };
+  }
+
+  // After 24 hours: show date and time
+  const timeFormatted = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateFormatted = toLocalizedDate(d, lang);
+  return {
+    display: `${dateFormatted}, ${timeFormatted}`,
+    isRecent: false,
+    fullTooltip
+  };
+}
+

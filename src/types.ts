@@ -11,7 +11,9 @@ export interface ProductVariant {
   price: number;
   oldPrice: number;
   image: string;
+  images?: string[]; // Multiple product images for slider
   sizes: string[];
+  colors?: string[]; // Optional color options list
   hasLong?: boolean;
   longSizes?: string[];
   customFields?: VariantOptionField[]; // Dynamic variant fields configured from admin
@@ -24,6 +26,7 @@ export interface ProductVariant {
 
 export interface PageSmsTemplates {
   enabled: boolean;
+  senderId?: string; // Optional custom sender ID for this landing page / brand
   orderReceived?: string;
   orderConfirmed?: string;
   courierDispatched?: string;
@@ -107,6 +110,22 @@ export type OrderStatus =
   | 'cancelled'
   | 'returned';
 
+export interface CourierCustomerHistory {
+  phone: string;
+  totalParcels: number;
+  totalDelivered: number;
+  totalCancelled: number;
+  totalFraudReports: number;
+  deliveryRate: number; // 0-100 percentage
+  score?: number;
+  level?: 'safe' | 'caution' | 'risk' | 'new' | 'unknown';
+  reasons?: string[];
+  notice?: string;
+  source: 'steadfast' | 'store' | 'mixed';
+  checkedAt?: string;
+  isLiveCourier?: boolean;
+}
+
 export interface CourierDetails {
   provider: 'steadfast' | 'pathao' | 'none';
   consignmentId?: string;
@@ -140,7 +159,9 @@ export interface Order {
   subtotal: number;
   grandTotal: number;
   status: OrderStatus;
+  serialNumber?: number;
   courier?: CourierDetails;
+  courierCustomerHistory?: CourierCustomerHistory;
   smsLogs?: SmsLogItem[];
   googleSheetSynced?: boolean;
   googleSheetSyncedAt?: string;
@@ -173,6 +194,11 @@ export interface SmsGatewayConfig {
   senderId: string;
   apiUrl?: string;
   isEnabled: boolean;
+  manualOnly?: boolean; // When true, all automatic SMS are turned off; admin triggers manually
+  autoOrderReceived?: boolean; // Auto-send SMS when order is placed
+  autoOrderConfirmed?: boolean; // Auto-send SMS when order is marked confirmed
+  autoCourierDispatched?: boolean; // Auto-send SMS when parcel is sent to courier
+  autoDelivered?: boolean; // Auto-send SMS when delivery is complete
   templates: {
     orderReceived: string;
     orderConfirmed: string;

@@ -55,6 +55,7 @@ export default function LandingPageEditor({ page, onBack, onSaved }: LandingPage
 
   // Page-specific SMS Templates
   const [smsTemplatesEnabled, setSmsTemplatesEnabled] = useState(page?.smsTemplates?.enabled ?? false);
+  const [smsSenderId, setSmsSenderId] = useState(page?.smsTemplates?.senderId || '');
   const [smsOrderReceived, setSmsOrderReceived] = useState(
     page?.smsTemplates?.orderReceived || 'প্রিয় {customer_name}, {brand_name}-এ আপনার অর্ডার #{order_id} গ্রহণ করা হয়েছে। মোট বিল: {total}৳।'
   );
@@ -216,6 +217,7 @@ export default function LandingPageEditor({ page, onBack, onSaved }: LandingPage
       price: products[0]?.price || 999,
       oldPrice: products[0]?.oldPrice || 1650,
       image: products[0]?.image || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80',
+      images: [products[0]?.image || 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80'],
       customFields: defaultFields,
       sizes: defaultFields[0]?.options || ['৩৮', '৪০', '৪২', '৪৪'],
       hasLong: !!defaultFields[1],
@@ -479,6 +481,7 @@ export default function LandingPageEditor({ page, onBack, onSaved }: LandingPage
       },
       smsTemplates: {
         enabled: smsTemplatesEnabled,
+        senderId: smsSenderId.trim(),
         orderReceived: smsOrderReceived.trim(),
         orderConfirmed: smsOrderConfirmed.trim(),
         courierDispatched: smsCourierDispatched.trim(),
@@ -1125,11 +1128,21 @@ function doPost(e) {
 
                   {/* Image URL */}
                   <div className="sm:col-span-3">
-                    <label className="block font-bold text-stone-700 mb-1">পণ্য ছবির URL (Image URL):</label>
+                    <label className="block font-bold text-stone-700 mb-1">পণ্য প্রধান ছবির URL (Primary Image URL):</label>
                     <input
                       type="url"
                       value={prod.image}
-                      onChange={e => handleUpdateVariant(idx, 'image', e.target.value)}
+                      onChange={e => {
+                        const newUrl = e.target.value;
+                        const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image];
+                        if (currentImages.length > 0) {
+                          currentImages[0] = newUrl;
+                        } else {
+                          currentImages.push(newUrl);
+                        }
+                        handleUpdateVariant(idx, 'image', newUrl);
+                        handleUpdateVariant(idx, 'images', currentImages);
+                      }}
                       placeholder="https://images.unsplash.com/..."
                       className="w-full px-3 py-1.5 border border-stone-300 rounded-lg bg-white font-mono text-[11px]"
                     />
@@ -1145,7 +1158,125 @@ function doPost(e) {
                         (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&q=80';
                       }}
                     />
-                    <span className="text-[10px] text-stone-500">ছবির প্রিভিউ</span>
+                    <span className="text-[10px] text-stone-500">প্রধান ছবি</span>
+                  </div>
+
+                  {/* Multiple Product Images / Slider Gallery Manager */}
+                  <div className="sm:col-span-4 bg-teal-50/60 p-3 rounded-xl border border-teal-200/80 space-y-2.5">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4 text-teal-700" />
+                        <label className="font-extrabold text-xs text-teal-950">
+                          প্রোডাক্ট স্লাইডার গ্যালারি (Multiple Slide Images):
+                        </label>
+                      </div>
+                      <span className="text-[10px] bg-teal-100 text-teal-800 font-bold px-2 py-0.5 rounded-full">
+                        মোট {((prod.images && prod.images.length > 0) ? prod.images : [prod.image].filter(Boolean)).length} টি ছবি
+                      </span>
+                    </div>
+
+                    {/* Image thumbnails list */}
+                    <div className="flex flex-wrap gap-2.5 items-center">
+                      {((prod.images && prod.images.length > 0) ? prod.images : [prod.image].filter(Boolean)).map((imgUrl, imgIdx) => {
+                        const isMain = prod.image === imgUrl || imgIdx === 0;
+                        return (
+                          <div key={imgIdx} className="relative group w-14 h-14 rounded-xl border-2 border-stone-200 overflow-hidden bg-white shadow-2xs">
+                            <img
+                              src={imgUrl}
+                              alt={`Product slide ${imgIdx + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={e => {
+                                (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&q=80';
+                              }}
+                            />
+                            {isMain ? (
+                              <span className="absolute top-0.5 left-0.5 bg-teal-600 text-white text-[7px] font-black px-1 rounded-sm shadow-xs pointer-events-none">
+                                মেইন
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image];
+                                  const reordered = [imgUrl, ...currentImages.filter(url => url !== imgUrl)];
+                                  handleUpdateVariant(idx, 'image', imgUrl);
+                                  handleUpdateVariant(idx, 'images', reordered);
+                                }}
+                                className="absolute bottom-0.5 left-0.5 bg-stone-900/90 hover:bg-stone-900 text-white text-[7px] font-bold px-1 py-0.5 rounded-sm opacity-90 sm:opacity-0 group-hover:opacity-100 transition shadow-xs"
+                                title="প্রধান ছবি বানান"
+                              >
+                                প্রধান
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image];
+                                const filtered = currentImages.filter((_, i) => i !== imgIdx);
+                                if (filtered.length === 0) {
+                                  alert('কমপক্ষে একটি ছবি থাকতে হবে!');
+                                  return;
+                                }
+                                const newMain = isMain ? filtered[0] : prod.image;
+                                handleUpdateVariant(idx, 'image', newMain);
+                                handleUpdateVariant(idx, 'images', filtered);
+                              }}
+                              className="absolute top-0.5 right-0.5 bg-rose-600/90 hover:bg-rose-700 text-white p-0.5 rounded-full opacity-90 sm:opacity-0 group-hover:opacity-100 transition shadow-xs"
+                              title="ছবি মুছে ফেলুন"
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        );
+                      })}
+
+                      {/* Add new image input */}
+                      <div className="flex-1 min-w-[200px] flex items-center gap-1.5">
+                        <input
+                          type="url"
+                          id={`add-img-input-${idx}`}
+                          placeholder="নতুন ছবির URL পেস্ট করুন..."
+                          className="flex-1 px-2.5 py-1 text-xs border border-teal-300 rounded-lg bg-white font-mono text-[11px]"
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              const input = e.currentTarget;
+                              const val = input.value.trim();
+                              if (val) {
+                                const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image].filter(Boolean);
+                                if (!currentImages.includes(val)) {
+                                  const updated = [...currentImages, val];
+                                  handleUpdateVariant(idx, 'images', updated);
+                                }
+                                input.value = '';
+                              }
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const input = document.getElementById(`add-img-input-${idx}`) as HTMLInputElement;
+                            if (input && input.value.trim()) {
+                              const val = input.value.trim();
+                              const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image].filter(Boolean);
+                              if (!currentImages.includes(val)) {
+                                const updated = [...currentImages, val];
+                                handleUpdateVariant(idx, 'images', updated);
+                              }
+                              input.value = '';
+                            }
+                          }}
+                          className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-1 shadow-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>+ ছবি যোগ</span>
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-teal-800/80">
+                      💡 আপনি একাধিক ছবি যোগ করতে পারবেন। কাস্টমাররা ওয়েবসাইটে পণ্যটি স্লাইড (Slide) করে সবগুলো ছবি দেখতে পারবে।
+                    </p>
                   </div>
 
                   {/* Category Selection (E-Commerce Mode) */}
@@ -1945,6 +2076,23 @@ function doPost(e) {
                       </span>
                     ))}
                   </div>
+                </div>
+
+                {/* Page Specific Sender ID (Optional) */}
+                <div className="bg-stone-50 p-3 rounded-xl border border-stone-200">
+                  <label className="block font-bold text-stone-800 mb-1">
+                    পেজের জন্য আলাদা সেন্ডার আইডি (Sender ID / Masking) - ঐচ্ছিক:
+                  </label>
+                  <input
+                    type="text"
+                    value={smsSenderId}
+                    onChange={e => setSmsSenderId(e.target.value)}
+                    placeholder="যেমন: AmarChoice বা HoneyShop (খালি রাখলে মেইন সেটিংসের সেন্ডার আইডি ব্যবহার হবে)"
+                    className="w-full px-3 py-2 border border-stone-300 rounded-lg bg-white font-mono text-xs"
+                  />
+                  <span className="text-[10px] text-stone-500 mt-1 block">
+                    যদি এই নির্দিষ্ট ক্যাম্পেইন বা ব্র্যান্ডের জন্য আপনার বাল্কএসএমএস অ্যাকাউন্টে আলাদা সেন্ডার আইডি থাকে, তবে দিতে পারেন।
+                  </span>
                 </div>
 
                 {/* 1. Order Received SMS */}

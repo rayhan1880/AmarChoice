@@ -200,6 +200,12 @@ export const INITIAL_LANDING_PAGES: LandingPage[] = [
         price: 1490,
         oldPrice: 2300,
         image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&q=80',
+        images: [
+          'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80',
+          'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80',
+          'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80'
+        ],
+        colors: ['কালো (Black)', 'নেভি ব্লু (Navy)', 'মেরুন (Maroon)'],
         sizes: ['৫২', '৫৪', '৫৬'],
         hasLong: false,
         inStock: true,
@@ -213,6 +219,12 @@ export const INITIAL_LANDING_PAGES: LandingPage[] = [
         price: 1190,
         oldPrice: 1750,
         image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80',
+        images: [
+          'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80',
+          'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&q=80',
+          'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800&q=80'
+        ],
+        colors: ['সাদা (White)', 'অ্যাশ (Ash Grey)', 'রয়্যাল ব্লু (Royal Blue)'],
         sizes: ['৩৮', '৪০', '৪২', '৪৪'],
         hasLong: true,
         longSizes: ['৪০', '৪২', '৪৪', '৪৬'],
@@ -227,6 +239,11 @@ export const INITIAL_LANDING_PAGES: LandingPage[] = [
         price: 2350,
         oldPrice: 3400,
         image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&q=80',
+        images: [
+          'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&q=80',
+          'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80'
+        ],
+        colors: ['গোলাপি (Pink)', 'সী-গ্রিন (Sea Green)', 'ম্যাজেন্টা (Magenta)'],
         sizes: ['১২ হাত উইথ ব্লাউজপিস'],
         inStock: true,
         isFeatured: false,
@@ -239,6 +256,11 @@ export const INITIAL_LANDING_PAGES: LandingPage[] = [
         price: 490,
         oldPrice: 750,
         image: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&q=80',
+        images: [
+          'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=800&q=80',
+          'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=800&q=80'
+        ],
+        colors: ['কালো (Black)', 'ন্যুড ব্রাউন (Nude)', 'অফ-হোয়াইট (Off White)'],
         sizes: ['ফ্রি সাইজ'],
         inStock: true,
         isFeatured: false,
@@ -251,6 +273,11 @@ export const INITIAL_LANDING_PAGES: LandingPage[] = [
         price: 1690,
         oldPrice: 2800,
         image: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=600&q=80',
+        images: [
+          'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&q=80',
+          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'
+        ],
+        colors: ['ম্যাট ব্ল্যাক (Black)', 'সিলভার (Silver)', 'অরেঞ্জ (Orange)'],
         sizes: ['স্ট্যান্ডার্ড সাইজ'],
         inStock: true,
         isFeatured: true,
@@ -263,6 +290,11 @@ export const INITIAL_LANDING_PAGES: LandingPage[] = [
         price: 850,
         oldPrice: 1400,
         image: 'https://images.unsplash.com/photo-1627123424574-724758594e93?w=600&q=80',
+        images: [
+          'https://images.unsplash.com/photo-1627123424574-724758594e93?w=800&q=80',
+          'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=800&q=80'
+        ],
+        colors: ['চকলেট ব্রাউন (Brown)', 'জেট ব্ল্যাক (Black)'],
         sizes: ['স্ট্যান্ডার্ড'],
         inStock: true,
         isFeatured: false,
@@ -544,6 +576,11 @@ export const INITIAL_SETTINGS: AppSettings = {
     senderId: 'AmarChoice',
     apiUrl: 'https://api.greenweb.com.bd/api.php',
     isEnabled: true,
+    manualOnly: false,
+    autoOrderReceived: true,
+    autoOrderConfirmed: true,
+    autoCourierDispatched: true,
+    autoDelivered: true,
     templates: {
       orderReceived: 'প্রিয় {customer_name}, আপনার অর্ডারটি (#{order_id}) AmarChoice-এ গ্রহণ করা হয়েছে। মোট মূল্য: {total}৳। প্রতিনিধি শীঘ্রই যোগাযোগ করবেন।',
       orderConfirmed: 'প্রিয় {customer_name}, আপনার অর্ডার #{order_id} সফলভাবে কনফার্ম করা হয়েছে। শীঘ্রই পার্সেল পাঠানো হবে। সাথে থাকুন!',
@@ -654,6 +691,14 @@ export const INITIAL_INCOMPLETE_ORDERS: IncompleteOrder[] = [
 ];
 
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
+  {
+    id: 'user-admin-owner',
+    name: 'মালিক (Owner)',
+    email: 'bmrayhan330@gmail.com',
+    password: 'admin123',
+    role: 'superadmin',
+    createdAt: '2026-01-01T00:00:00.000Z'
+  },
   {
     id: 'user-admin-1',
     name: 'মালিক / সুপার অ্যাডমিন',

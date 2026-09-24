@@ -1,8 +1,9 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from 'react';
 import { LandingPage, Order, AppSettings, PixelEventLog, OrderStatus, AdminTab, AdminUser, FraudControlConfig, BlockedCustomer, BlockedIpRecord, IncompleteOrder } from '../types.ts';
 import { api } from '../services/api.ts';
 import { INITIAL_LANDING_PAGES, INITIAL_ORDERS, INITIAL_SETTINGS, INITIAL_ADMIN_USERS, INITIAL_INCOMPLETE_ORDERS } from '../data/initialData.ts';
 import { AdminLanguage } from '../utils/translations.ts';
+import { initFacebookPixel, initTikTokPixel } from '../utils/pixelTracker.ts';
 
 export type { AdminTab, AdminLanguage };
 
@@ -23,9 +24,9 @@ interface AppContextType {
   users: AdminUser[];
   adminLanguage: AdminLanguage;
   setAdminLanguage: (lang: AdminLanguage) => void;
-  setViewMode: (mode: 'customer' | 'admin') => void;
+  setViewMode: (mode: 'customer' | 'admin', targetPageSlug?: string) => void;
   setAdminTab: (tab: AdminTab) => void;
-  setActiveLandingPage: (page: LandingPage) => void;
+  setActiveLandingPage: (page: LandingPage, updateUrl?: boolean) => void;
   selectPageBySlug: (slug: string) => void;
   refreshAll: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
@@ -33,12 +34,27 @@ interface AppContextType {
   createAdminUser: (userData: { name: string; email: string; password: string; role?: 'superadmin' | 'admin' | 'moderator' }) => Promise<AdminUser>;
   deleteAdminUser: (id: string) => Promise<void>;
   createOrder: (orderData: Partial<Order>) => Promise<Order>;
+  updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
   updateOrderStatus: (id: string, status: OrderStatus, notes?: string) => Promise<void>;
   deleteOrder: (id: string) => Promise<void>;
-  sendToCourier: (orderId: string, provider: 'steadfast' | 'pathao', deliveryFee?: number, note?: string) => Promise<void>;
+  bulkActionOrders: (payload: {
+    orderIds: string[];
+    action: 'status' | 'delete' | 'courier' | 'sync_courier';
+    status?: OrderStatus;
+    provider?: 'steadfast' | 'pathao';
+  }) => Promise<{ success: boolean; count: number; message: string }>;
+  sendToCourier: (orderId: string, provider: 'steadfast' | 'pathao', deliveryFee?: number, note?: string) => Promise<{ success: boolean; message?: string; order: Order }>;
   checkCourierStatus: (orderId: string) => Promise<string>;
   syncAllCouriers: () => Promise<number>;
-  sendSms: (orderId: string, message: string, customPhone?: string) => Promise<void>;
+  sendSms: (orderId: string, message: string, customPhone?: string) => Promise<{ success: boolean; log?: NonNullable<Order['smsLogs']>[number]; error?: string; gatewayResponse?: string }>;
+  sendOrderConfirmSms: (
+    orderId: string,
+    payload?: { customPhone?: string; customMessage?: string; updateStatusToConfirmed?: boolean }
+  ) => Promise<{ success: boolean; message: string; log?: NonNullable<Order['smsLogs']>[number]; order?: Order; error?: string; gatewayResponse?: string }>;
+  bulkSendConfirmSms: (
+    orderIds: string[],
+    updateStatusToConfirmed?: boolean
+  ) => Promise<{ success: boolean; count: number; failedCount: number; message: string }>;
   createLandingPage: (page: Partial<LandingPage>) => Promise<LandingPage>;
   updateLandingPage: (id: string, page: Partial<LandingPage>) => Promise<LandingPage>;
   setDefaultLandingPage: (id: string) => Promise<void>;
@@ -57,12 +73,11 @@ interface AppContextType {
   blockIp: (data: { ip: string; name?: string; reason?: string; associatedPhone?: string }) => Promise<BlockedIpRecord>;
   unblockIp: (ip: string) => Promise<void>;
   // Incomplete Orders
+  refreshIncompleteOrders: () => Promise<IncompleteOrder[]>;
   saveIncompleteOrderLead: (data: Partial<IncompleteOrder>) => Promise<IncompleteOrder>;
   updateIncompleteOrder: (
     id: string,
-    data: {
-      status?: IncompleteOrder['status'];
-      notes?: string;
+    data: Partial<IncompleteOrder> & {
       contactLog?: { method: 'call' | 'sms' | 'whatsapp'; note?: string };
     }
   ) => Promise<void>;
@@ -75,27 +90,121 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Helper to check if URL targets mypanel
+// Helper to check if URL targets mypanel / admin / login
 function checkIsMyPanelUrl(): boolean {
   if (typeof window === 'undefined') return false;
   try {
-    const path = window.location.pathname.toLowerCase();
-    const hash = window.location.hash.toLowerCase();
-    const search = window.location.search.toLowerCase();
-    const href = window.location.href.toLowerCase();
+    const path = (window.location.pathname || '').toLowerCase();
+    const hash = (window.location.hash || '').toLowerCase();
+    const search = (window.location.search || '').toLowerCase();
+    const href = (window.location.href || '').toLowerCase();
 
-    return (
-      path.includes('mypanel') ||
-      path.endsWith('/admin') ||
-      path === '/admin' ||
-      hash.includes('mypanel') ||
-      hash.includes('admin') ||
-      search.includes('mypanel') ||
-      search.includes('admin') ||
-      href.includes('mypanel')
-    );
+    const adminKeywords = ['mypanel', 'admin', 'login', 'panel', 'dashboard'];
+    for (const kw of adminKeywords) {
+      if (
+        path.includes(kw) ||
+        hash.includes(kw) ||
+        search.includes(kw) ||
+        href.includes(kw)
+      ) {
+        return true;
+      }
+    }
+
+    // Check parent location if same-origin (safe try-catch)
+    try {
+      if (window.parent && window.parent !== window) {
+        const parentHref = (window.parent.location.href || '').toLowerCase();
+        const parentPath = (window.parent.location.pathname || '').toLowerCase();
+        for (const kw of adminKeywords) {
+          if (parentHref.includes(kw) || parentPath.includes(kw)) {
+            return true;
+          }
+        }
+      }
+    } catch {
+      // Cross-origin iframe security restriction - silently ignore
+    }
+
+    return false;
   } catch {
     return false;
+  }
+}
+
+const RESERVED_URL_KEYWORDS = new Set([
+  '',
+  '/',
+  'index.html',
+  'mypanel',
+  'admin',
+  'login',
+  'panel',
+  'dashboard',
+  'customer',
+  'home',
+  'api',
+  'assets',
+  'favicon.ico',
+  'manifest.json',
+  'sw.js',
+  'robots.txt',
+  'sitemap.xml'
+]);
+
+// Helper to extract requested landing page slug from URL pathname, search query, or hash
+export function extractSlugFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    // 1. Check query parameter: ?page=slug, ?p=slug, ?slug=slug, ?lp=slug
+    const searchParams = new URLSearchParams(window.location.search);
+    const fromSearch = searchParams.get('page') || searchParams.get('p') || searchParams.get('slug') || searchParams.get('lp');
+    if (fromSearch && fromSearch.trim()) {
+      const clean = decodeURIComponent(fromSearch.trim().toLowerCase());
+      if (!RESERVED_URL_KEYWORDS.has(clean)) return clean;
+    }
+
+    // 2. Check hash: #/slug, #slug, #page=slug
+    if (window.location.hash) {
+      const cleanHash = window.location.hash.replace(/^#\/?/, '').trim();
+      if (cleanHash && !cleanHash.toLowerCase().includes('mypanel') && !cleanHash.toLowerCase().includes('admin')) {
+        if (cleanHash.includes('=')) {
+          const hashParams = new URLSearchParams(cleanHash);
+          const val = hashParams.get('page') || hashParams.get('p') || hashParams.get('slug') || hashParams.get('lp');
+          if (val) {
+            const cleanVal = decodeURIComponent(val.trim().toLowerCase());
+            if (!RESERVED_URL_KEYWORDS.has(cleanVal)) return cleanVal;
+          }
+        }
+        const firstSegment = cleanHash.split('/')[0].split('?')[0].trim().toLowerCase();
+        if (firstSegment && !RESERVED_URL_KEYWORDS.has(firstSegment)) {
+          return decodeURIComponent(firstSegment);
+        }
+      }
+    }
+
+    // 3. Check pathname: e.g. /page-1789975991009, /mayaboti-dress, /page/mayaboti-dress
+    const pathname = window.location.pathname.trim();
+    if (pathname && pathname !== '/' && pathname !== '/index.html') {
+      const segments = pathname.replace(/^\/+|\/+$/g, '').split('/');
+      const first = segments[0]?.toLowerCase().trim() || '';
+      if (RESERVED_URL_KEYWORDS.has(first)) {
+        return null;
+      }
+      // Prefixed path like /page/some-slug or /p/some-slug or /shop/some-slug
+      if (['page', 'p', 'shop', 'landing', 'product'].includes(first) && segments[1]) {
+        const sub = segments[1].toLowerCase().trim();
+        if (sub && !RESERVED_URL_KEYWORDS.has(sub)) {
+          return decodeURIComponent(sub);
+        }
+      }
+      // Direct path like /page-1789975991009 or /mayaboti-dress
+      return decodeURIComponent(first);
+    }
+
+    return null;
+  } catch {
+    return null;
   }
 }
 
@@ -117,7 +226,26 @@ if (typeof window !== 'undefined') {
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [landingPages, setLandingPages] = useState<LandingPage[]>(INITIAL_LANDING_PAGES);
-  const [activeLandingPage, setActiveLandingPageState] = useState<LandingPage | null>(INITIAL_LANDING_PAGES[0]);
+  const landingPagesRef = useRef<LandingPage[]>(INITIAL_LANDING_PAGES);
+
+  // Synchronize ref with latest landing pages list
+  useEffect(() => {
+    landingPagesRef.current = landingPages;
+  }, [landingPages]);
+
+  // Initial active page resolved from URL or default
+  const [activeLandingPage, setActiveLandingPageState] = useState<LandingPage | null>(() => {
+    const targetSlug = extractSlugFromUrl();
+    if (targetSlug) {
+      const matched = INITIAL_LANDING_PAGES.find(p => 
+        (p.slug && p.slug.toLowerCase() === targetSlug) || 
+        (p.id && p.id.toLowerCase() === targetSlug)
+      );
+      if (matched) return matched;
+    }
+    const defaultPage = INITIAL_LANDING_PAGES.find(p => p.isDefault) || INITIAL_LANDING_PAGES[0] || null;
+    return defaultPage;
+  });
   const [orders, setOrders] = useState<Order[]>([]);
   const [incompleteOrders, setIncompleteOrders] = useState<IncompleteOrder[]>([]);
   const [settings, setSettings] = useState<AppSettings>(INITIAL_SETTINGS);
@@ -176,26 +304,64 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const handleUrlChange = () => {
       const isPanel = checkIsMyPanelUrl();
-      setViewModeState(prev => {
-        const next = isPanel ? 'admin' : 'customer';
-        return prev !== next ? next : prev;
-      });
+      if (isPanel) {
+        setViewModeState('admin');
+        try { sessionStorage.setItem('amarchoice_current_view', 'admin'); } catch {}
+        return;
+      }
+
+      setViewModeState('customer');
+      try { sessionStorage.setItem('amarchoice_current_view', 'customer'); } catch {}
+
+      // If customer view, synchronize active landing page with current URL slug
+      const targetSlug = extractSlugFromUrl();
+      const pages = landingPagesRef.current;
+      if (pages.length > 0) {
+        if (targetSlug) {
+          const clean = targetSlug.toLowerCase();
+          const found = pages.find(p => 
+            (p.slug && p.slug.toLowerCase() === clean) || 
+            (p.id && p.id.toLowerCase() === clean)
+          );
+          if (found) {
+            setActiveLandingPageState(curr => (curr?.id === found.id ? curr : found));
+          }
+        } else {
+          // URL is root / home page -> activate designated default home page
+          const defaultHome = pages.find(p => p.isDefault) || pages[0];
+          if (defaultHome) {
+            setActiveLandingPageState(curr => (curr?.id === defaultHome.id ? curr : defaultHome));
+          }
+        }
+      }
     };
 
     window.addEventListener('popstate', handleUrlChange);
     window.addEventListener('hashchange', handleUrlChange);
     window.addEventListener('app_location_change', handleUrlChange);
+    window.addEventListener('focus', handleUrlChange);
+
+    const handleVisibility = () => {
+      if (!document.hidden) handleUrlChange();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     // AI Studio message listener
     const handleMessage = (event: MessageEvent) => {
       try {
-        if (typeof event.data === 'string' && event.data.includes('mypanel')) {
+        if (!event.data) return;
+        const str = typeof event.data === 'string' ? event.data : JSON.stringify(event.data);
+        const lower = str.toLowerCase();
+        if (
+          lower.includes('mypanel') ||
+          lower.includes('admin') ||
+          lower.includes('login') ||
+          lower.includes('panel')
+        ) {
           setViewModeState('admin');
-        } else if (event.data && typeof event.data === 'object') {
-          const str = JSON.stringify(event.data);
-          if (str.includes('mypanel')) {
-            setViewModeState('admin');
-          }
+          try { sessionStorage.setItem('amarchoice_current_view', 'admin'); } catch {}
+        } else {
+          handleUrlChange();
         }
       } catch {
         // ignore
@@ -203,24 +369,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener('message', handleMessage);
 
-    // Fast interval fallback for embedded AI Studio preview bar URL updates
+    // Periodic check for URL bar updates in iframe environments
     const timer = setInterval(() => {
-      handleUrlChange();
-    }, 120);
+      const isPanel = checkIsMyPanelUrl();
+      if (isPanel) {
+        setViewModeState('admin');
+      }
+    }, 250);
 
     // Secret shortcut: Alt+P or Ctrl+Shift+A for store owners
     let keyBuffer = '';
     const handleKeyDown = (e: KeyboardEvent) => {
+      const targetTag = (e.target as HTMLElement)?.tagName?.toLowerCase();
+      if (targetTag === 'input' || targetTag === 'textarea' || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
       if ((e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) || (e.altKey && (e.key === 'P' || e.key === 'p'))) {
         e.preventDefault();
         setViewMode('admin');
         return;
       }
 
-      // Check if user typed 'mypanel' anywhere
+      // Check if store owner typed 'mypanel' or 'admin'
       if (e.key && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
         keyBuffer = (keyBuffer + e.key.toLowerCase()).slice(-8);
-        if (keyBuffer.includes('mypanel')) {
+        if (keyBuffer.includes('mypanel') || keyBuffer.includes('admin')) {
           keyBuffer = '';
           setViewMode('admin');
         }
@@ -232,15 +406,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
       window.removeEventListener('popstate', handleUrlChange);
       window.removeEventListener('hashchange', handleUrlChange);
       window.removeEventListener('app_location_change', handleUrlChange);
+      window.removeEventListener('focus', handleUrlChange);
+      document.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('message', handleMessage);
       window.removeEventListener('keydown', handleKeyDown);
       clearInterval(timer);
     };
   }, []);
 
-  const setViewMode = (mode: 'customer' | 'admin') => {
+  // Dynamically load Meta (Facebook) Pixel & TikTok Pixel scripts when active page or settings change
+  useEffect(() => {
+    const metaPixel = activeLandingPage?.facebookPixelId || settings.globalPixelId;
+    if (metaPixel) {
+      initFacebookPixel(metaPixel);
+    }
+    const ttPixel = activeLandingPage?.tiktokPixelId || settings.globalTiktokPixelId;
+    if (ttPixel) {
+      initTikTokPixel(ttPixel);
+    }
+  }, [activeLandingPage?.facebookPixelId, activeLandingPage?.tiktokPixelId, settings.globalPixelId, settings.globalTiktokPixelId]);
+
+  const setViewMode = (mode: 'customer' | 'admin', targetPageSlug?: string) => {
     setViewModeState(mode);
     if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.setItem('amarchoice_current_view', mode);
+      } catch {}
       if (mode === 'admin') {
         if (!checkIsMyPanelUrl()) {
           try {
@@ -250,12 +441,37 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }
       } else {
-        if (checkIsMyPanelUrl()) {
-          try {
-            window.history.pushState(null, '', '/');
-          } catch {
-            window.location.hash = '';
+        const pages = landingPagesRef.current;
+        const defaultPage = pages.find(p => p.isDefault) ||
+                            pages.find(p => p.id === settings.defaultLandingPageId) ||
+                            pages[0];
+
+        let targetPage: LandingPage | undefined;
+        let targetUrl = '/';
+
+        if (targetPageSlug) {
+          targetPage = pages.find(p => p.slug === targetPageSlug || p.id === targetPageSlug);
+          if (targetPage && targetPage.isDefault) {
+            targetUrl = '/';
+          } else if (targetPage) {
+            targetUrl = `/${targetPage.slug}`;
+          } else {
+            targetUrl = `/${targetPageSlug}`;
           }
+        } else {
+          // No specific slug passed (e.g. clicking Live Preview / Home) -> show default home page
+          targetPage = defaultPage;
+          targetUrl = '/';
+        }
+
+        if (targetPage) {
+          setActiveLandingPageState(targetPage);
+        }
+
+        try {
+          window.history.pushState(null, '', targetUrl);
+        } catch {
+          window.location.hash = targetUrl === '/' ? '' : `#${targetUrl}`;
         }
       }
     }
@@ -289,6 +505,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ? ordersData.filter(o => !['ORD-1001', 'ORD-1002', 'ORD-1003', 'ORD-1004'].includes(o.id))
         : ordersData;
 
+      // Read any locally stored offline orders (useful if backend server is not running on static host)
+      let localOrders: Order[] = [];
+      try {
+        if (typeof window !== 'undefined') {
+          localOrders = JSON.parse(localStorage.getItem('amarchoice_orders') || '[]');
+        }
+      } catch {
+        localOrders = [];
+      }
+
+      // Sync any local offline orders to backend so they exist in database
+      if (localOrders.length > 0) {
+        try {
+          await api.syncLocalOrders(localOrders);
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('amarchoice_orders');
+          }
+        } catch (e) {
+          console.warn('Failed to sync local orders to backend:', e);
+        }
+      }
+
+      const mergedOrdersMap = new Map<string, Order>();
+      [...finalOrders, ...localOrders].forEach(o => {
+        if (o && o.id) mergedOrdersMap.set(o.id, o);
+      });
+      const combinedOrders = Array.from(mergedOrdersMap.values());
+      // Always sort newest first
+      combinedOrders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
       const finalIncOrders = isDemoRemoved
         ? incOrdersData.filter(i => !['inc-101', 'inc-102'].includes(i.id))
         : incOrdersData;
@@ -297,7 +543,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const validPages = (pagesData && pagesData.length > 0) ? pagesData : INITIAL_LANDING_PAGES;
 
       setLandingPages(validPages);
-      setOrders(finalOrders);
+      setOrders(combinedOrders);
       setSettings(settingsData);
       setPixelLogs(logsData);
       setUsers(usersData);
@@ -309,36 +555,42 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
 
       // Determine initial active page:
-      // If URL explicitly requests a slug (?page=slug or hash), respect that.
+      // If URL explicitly requests a slug (from pathname e.g. /page-1789975991009, ?page=slug, or hash), respect that.
       // Otherwise, select the designated Home Page (isDefault: true or settingsData.defaultLandingPageId).
-      let targetSlugOrId: string | null = null;
-      if (typeof window !== 'undefined') {
-        const searchParams = new URLSearchParams(window.location.search);
-        targetSlugOrId = searchParams.get('page') || searchParams.get('p') || null;
-        if (!targetSlugOrId && window.location.hash) {
-          const cleanHash = window.location.hash.replace(/^#\/?/, '');
-          if (cleanHash && !cleanHash.includes('mypanel') && !cleanHash.includes('admin')) {
-            targetSlugOrId = cleanHash;
+      const targetSlugOrId = extractSlugFromUrl();
+
+      let targetPage: LandingPage | null = null;
+      if (targetSlugOrId) {
+        const cleanTarget = targetSlugOrId.toLowerCase();
+        targetPage = validPages.find(p => 
+          (p.slug && p.slug.toLowerCase() === cleanTarget) || 
+          (p.id && p.id.toLowerCase() === cleanTarget)
+        ) || null;
+
+        // If not found in loaded array yet, fetch single landing page by slug or id directly from the server
+        if (!targetPage) {
+          try {
+            const single = await api.getLandingPage(targetSlugOrId);
+            if (single) {
+              targetPage = single;
+              if (!validPages.some(p => p.id === single.id)) {
+                validPages.push(single);
+                setLandingPages([...validPages]);
+                landingPagesRef.current = validPages;
+              }
+            }
+          } catch {
+            // ignore
           }
         }
       }
 
-      setActiveLandingPageState(prev => {
-        if (targetSlugOrId) {
-          const matchedByUrl = validPages.find(p => p.slug === targetSlugOrId || p.id === targetSlugOrId);
-          if (matchedByUrl) return matchedByUrl;
-        }
-        if (prev) {
-          const matched = validPages.find(p => p.id === prev.id || p.slug === prev.slug);
-          if (matched) return matched;
-        }
-        const defaultPage = validPages.find(p => p.isDefault) ||
-                            validPages.find(p => p.id === settingsData.defaultLandingPageId) ||
-                            validPages[0] ||
-                            INITIAL_LANDING_PAGES[0] ||
-                            null;
-        return defaultPage;
-      });
+      const defaultPage = validPages.find(p => p.isDefault) ||
+                          validPages.find(p => p.id === settingsData.defaultLandingPageId) ||
+                          validPages[0] ||
+                          INITIAL_LANDING_PAGES[0] ||
+                          null;
+      setActiveLandingPageState(targetPage || defaultPage);
     } catch (err) {
       console.error('Failed to load data:', err);
     } finally {
@@ -349,6 +601,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     refreshAll();
   }, [refreshAll]);
+
+  // Auto-poll orders periodically so new customer orders immediately appear at the top in serial
+  useEffect(() => {
+    let isCancelled = false;
+    const interval = setInterval(async () => {
+      try {
+        const fetchedOrders = await api.getOrders();
+        if (!isCancelled && Array.isArray(fetchedOrders)) {
+          setOrders(prev => {
+            const hasNew = fetchedOrders.length !== prev.length ||
+              (fetchedOrders[0] && prev[0]?.id !== fetchedOrders[0]?.id);
+            if (hasNew) {
+              return [...fetchedOrders].sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+            }
+            return prev;
+          });
+        }
+      } catch {
+        // Silently ignore polling errors
+      }
+    }, 5000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
@@ -421,16 +700,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setUsers(prev => prev.filter(u => u.id !== id));
   };
 
-  const setActiveLandingPage = (page: LandingPage) => {
+  const setActiveLandingPage = (page: LandingPage, updateUrl = true) => {
     setActiveLandingPageState(page);
     // Track PageView for this landing page
     trackPixelEvent('PageView', { pageTitle: page.title, slug: page.slug });
+    if (updateUrl && typeof window !== 'undefined' && viewMode === 'customer' && !checkIsMyPanelUrl()) {
+      const targetUrl = page.isDefault ? '/' : `/${page.slug}`;
+      if (window.location.pathname !== targetUrl) {
+        try {
+          window.history.pushState(null, '', targetUrl);
+        } catch {
+          window.location.hash = page.isDefault ? '' : `#/${page.slug}`;
+        }
+      }
+    }
   };
 
   const selectPageBySlug = (slug: string) => {
-    const found = landingPages.find(p => p.slug === slug);
+    const clean = slug.trim().toLowerCase();
+    const found = landingPages.find(p => 
+      (p.slug && p.slug.toLowerCase() === clean) || 
+      (p.id && p.id.toLowerCase() === clean)
+    );
     if (found) {
-      setActiveLandingPage(found);
+      setActiveLandingPage(found, true);
     }
   };
 
@@ -446,6 +739,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // 1. Meta / Facebook Browser Pixel (fbq) with Event ID for deduplication
     if (typeof window !== 'undefined') {
+      if (pixelId) initFacebookPixel(pixelId);
+      if (tiktokPixelId) initTikTokPixel(tiktokPixelId);
+
       const fbq = (window as unknown as { fbq?: (...args: unknown[]) => void }).fbq;
       if (typeof fbq === 'function') {
         fbq('track', eventName, data, { eventID: eventId });
@@ -533,7 +829,69 @@ export function AppProvider({ children }: { children: ReactNode }) {
       });
       return newOrder;
     } catch (err) {
-      console.error('Failed to create order:', err);
+      console.warn('Backend API unavailable or returned HTML, creating local fallback order:', err);
+      
+      const localId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+      const fallbackOrder: Order = {
+        id: localId,
+        landingPageId: orderData.landingPageId || '',
+        landingPageTitle: orderData.landingPageTitle || 'Landing Page',
+        landingPageSlug: orderData.landingPageSlug || '',
+        customerName: orderData.customerName || 'সম্মানিত ক্রেতা',
+        customerPhone: orderData.customerPhone || '',
+        customerAddress: orderData.customerAddress || '',
+        items: orderData.items || [],
+        deliveryLocation: orderData.deliveryLocation || 'inside_dhaka',
+        deliveryCharge: orderData.deliveryCharge ?? 0,
+        subtotal: orderData.subtotal ?? 0,
+        grandTotal: orderData.grandTotal ?? 0,
+        status: 'pending',
+        notes: orderData.notes || '',
+        createdAt: new Date().toISOString()
+      };
+
+      try {
+        if (typeof window !== 'undefined') {
+          const stored = JSON.parse(localStorage.getItem('amarchoice_orders') || '[]');
+          localStorage.setItem('amarchoice_orders', JSON.stringify([fallbackOrder, ...stored]));
+        }
+      } catch (e) {
+        console.warn('Could not save to localStorage:', e);
+      }
+
+      setOrders(prev => [fallbackOrder, ...prev]);
+
+      trackPixelEvent('Purchase', {
+        value: fallbackOrder.grandTotal,
+        currency: 'BDT',
+        orderId: fallbackOrder.id,
+        itemsCount: fallbackOrder.items.length
+      }, {
+        name: fallbackOrder.customerName,
+        phone: fallbackOrder.customerPhone,
+        address: fallbackOrder.customerAddress
+      });
+
+      return fallbackOrder;
+    }
+  };
+
+  const updateOrder = async (id: string, orderData: Partial<Order>): Promise<Order> => {
+    try {
+      const updated = await api.updateOrder(id, orderData);
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, ...updated } : o));
+      return updated;
+    } catch (err) {
+      console.error('Failed to update order:', err);
+      let fallback: Order | undefined;
+      setOrders(prev => prev.map(o => {
+        if (o.id === id) {
+          fallback = { ...o, ...orderData };
+          return fallback;
+        }
+        return o;
+      }));
+      if (fallback) return fallback;
       throw err;
     }
   };
@@ -559,10 +917,35 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const bulkActionOrders = async (payload: {
+    orderIds: string[];
+    action: 'status' | 'delete' | 'courier' | 'sync_courier';
+    status?: OrderStatus;
+    provider?: 'steadfast' | 'pathao';
+  }) => {
+    try {
+      const res = await api.bulkActionOrders(payload);
+      if (res.orders) {
+        setOrders(res.orders);
+      } else {
+        await refreshAll();
+      }
+      return { success: true, count: res.count, message: res.message };
+    } catch (err: any) {
+      console.error('Failed to perform bulk action on orders:', err);
+      await refreshAll();
+      throw err;
+    }
+  };
+
   const sendToCourier = async (orderId: string, provider: 'steadfast' | 'pathao', deliveryFee?: number, note?: string) => {
     try {
-      const res = await api.sendToCourier(orderId, provider, deliveryFee, note);
-      setOrders(prev => prev.map(o => o.id === orderId ? res.order : o));
+      const existingOrder = orders.find(o => o.id === orderId);
+      const res = await api.sendToCourier(orderId, provider, deliveryFee, note, existingOrder);
+      if (res.order) {
+        setOrders(prev => prev.map(o => o.id === orderId ? res.order : o));
+      }
+      return { success: true, message: res.message, order: res.order };
     } catch (err) {
       console.error('Failed to send to courier:', err);
       throw err;
@@ -609,17 +992,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const sendSms = async (orderId: string, message: string, customPhone?: string) => {
     try {
       const res = await api.sendSms(orderId, message, customPhone);
-      setOrders(prev => prev.map(o => {
-        if (o.id === orderId) {
-          return {
-            ...o,
-            smsLogs: [res.log, ...(o.smsLogs || [])]
-          };
-        }
-        return o;
-      }));
+      if (res.order) {
+        setOrders(prev => prev.map(o => o.id === orderId ? res.order! : o));
+      } else if (res.log) {
+        setOrders(prev => prev.map(o => {
+          if (o.id === orderId) {
+            return {
+              ...o,
+              smsLogs: [res.log!, ...(o.smsLogs || [])]
+            };
+          }
+          return o;
+        }));
+      }
+      return res;
     } catch (err) {
       console.error('Failed to send SMS:', err);
+      throw err;
+    }
+  };
+
+  const sendOrderConfirmSms = async (
+    orderId: string,
+    payload?: { customPhone?: string; customMessage?: string; updateStatusToConfirmed?: boolean }
+  ) => {
+    try {
+      const res = await api.sendOrderConfirmSms(orderId, payload);
+      if (res.order) {
+        setOrders(prev => prev.map(o => o.id === orderId ? res.order! : o));
+      } else if (res.log) {
+        setOrders(prev => prev.map(o => {
+          if (o.id === orderId) {
+            return {
+              ...o,
+              status: payload?.updateStatusToConfirmed ? 'confirmed' : o.status,
+              smsLogs: [res.log!, ...(o.smsLogs || [])]
+            };
+          }
+          return o;
+        }));
+      }
+      return res;
+    } catch (err) {
+      console.error('Failed to send confirmation SMS:', err);
+      throw err;
+    }
+  };
+
+  const bulkSendConfirmSms = async (orderIds: string[], updateStatusToConfirmed = false) => {
+    try {
+      const res = await api.bulkSendConfirmSms(orderIds, updateStatusToConfirmed);
+      if (res.orders) {
+        setOrders(res.orders);
+      }
+      return res;
+    } catch (err) {
+      console.error('Failed to bulk send confirmation SMS:', err);
       throw err;
     }
   };
@@ -628,12 +1056,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const created = await api.createLandingPage(page);
       setLandingPages(prev => {
-        if (created.isDefault) {
-          return [created, ...prev.map(p => ({ ...p, isDefault: false }))];
-        }
-        return [created, ...prev];
+        const next = created.isDefault
+          ? [created, ...prev.map(p => ({ ...p, isDefault: false }))]
+          : [created, ...prev];
+        landingPagesRef.current = next;
+        return next;
       });
-      setActiveLandingPageState(created);
+      if (created.isDefault) {
+        setActiveLandingPageState(created);
+        setSettings(prev => ({ ...prev, defaultLandingPageId: created.id }));
+      } else {
+        setActiveLandingPageState(created);
+      }
       return created;
     } catch (err) {
       console.error('Failed to create landing page:', err);
@@ -644,14 +1078,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const updateLandingPage = async (id: string, page: Partial<LandingPage>): Promise<LandingPage> => {
     try {
       const updated = await api.updateLandingPage(id, page);
-      setLandingPages(prev =>
-        prev.map(p => {
+      setLandingPages(prev => {
+        const next = prev.map(p => {
           if (p.id === id) return updated;
           if (updated.isDefault) return { ...p, isDefault: false };
           return p;
-        })
-      );
-      if (activeLandingPage?.id === id) {
+        });
+        landingPagesRef.current = next;
+        return next;
+      });
+      if (updated.isDefault) {
+        setActiveLandingPageState(updated);
+        setSettings(prev => ({ ...prev, defaultLandingPageId: updated.id }));
+      } else if (activeLandingPage?.id === id) {
         setActiveLandingPageState(updated);
       }
       return updated;
@@ -664,38 +1103,44 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setDefaultLandingPage = async (id: string): Promise<void> => {
     try {
       const res = await api.setDefaultLandingPage(id);
-      if (res && res.landingPages) {
-        setLandingPages(res.landingPages);
-        if (res.defaultPage) {
-          setActiveLandingPageState(res.defaultPage);
-        }
+      let newPages: LandingPage[];
+      let newDefault: LandingPage | undefined;
+
+      if (res && res.landingPages && res.landingPages.length > 0) {
+        newPages = res.landingPages;
+        newDefault = res.defaultPage || res.landingPages.find(p => p.id === id || p.slug === id || p.isDefault);
       } else {
-        setLandingPages(prev =>
-          prev.map(p => ({
-            ...p,
-            isDefault: p.id === id || p.slug === id
-          }))
-        );
-        const newDef = landingPages.find(p => p.id === id || p.slug === id);
-        if (newDef) setActiveLandingPageState({ ...newDef, isDefault: true });
+        newPages = landingPagesRef.current.map(p => ({
+          ...p,
+          isDefault: p.id === id || p.slug === id
+        }));
+        newDefault = newPages.find(p => p.isDefault);
       }
+
+      setLandingPages(newPages);
+      landingPagesRef.current = newPages;
+
+      if (newDefault) {
+        setActiveLandingPageState(newDefault);
+      }
+
       setSettings(prev => ({
         ...prev,
-        defaultLandingPageId: id
+        defaultLandingPageId: newDefault?.id || id
       }));
     } catch (err) {
       console.error('Failed to set default landing page:', err);
-      setLandingPages(prev =>
-        prev.map(p => ({
-          ...p,
-          isDefault: p.id === id || p.slug === id
-        }))
-      );
-      const newDef = landingPages.find(p => p.id === id || p.slug === id);
-      if (newDef) setActiveLandingPageState({ ...newDef, isDefault: true });
+      const nextPages = landingPagesRef.current.map(p => ({
+        ...p,
+        isDefault: p.id === id || p.slug === id
+      }));
+      setLandingPages(nextPages);
+      landingPagesRef.current = nextPages;
+      const newDef = nextPages.find(p => p.isDefault);
+      if (newDef) setActiveLandingPageState(newDef);
       setSettings(prev => ({
         ...prev,
-        defaultLandingPageId: id
+        defaultLandingPageId: newDef?.id || id
       }));
     }
   };
@@ -705,8 +1150,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       await api.deleteLandingPage(id);
       setLandingPages(prev => {
         const next = prev.filter(p => p.id !== id);
+        const wasDefault = prev.some(p => p.id === id && p.isDefault);
+        if (wasDefault && next.length > 0) {
+          next[0].isDefault = true;
+          setSettings(s => ({ ...s, defaultLandingPageId: next[0].id }));
+        }
+        landingPagesRef.current = next;
         if (activeLandingPage?.id === id) {
-          setActiveLandingPageState(next[0] || null);
+          setActiveLandingPageState(next.find(p => p.isDefault) || next[0] || null);
         }
         return next;
       });
@@ -832,23 +1283,63 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   // Incomplete Orders Handlers
+  const refreshIncompleteOrders = async (): Promise<IncompleteOrder[]> => {
+    try {
+      const data = await api.getIncompleteOrders();
+      const localDemoRemoved = typeof window !== 'undefined' && localStorage.getItem('amarchoice_demo_data_removed') === 'true';
+      const isDemoRemoved = Boolean(localDemoRemoved || settings?.isDemoDataRemoved);
+      const filtered = isDemoRemoved ? (data || []).filter(i => !['inc-101', 'inc-102'].includes(i.id)) : (data || []);
+      setIncompleteOrders(filtered);
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('amarchoice_incomplete_orders', JSON.stringify(filtered.slice(0, 100)));
+        }
+      } catch {
+        // ignore
+      }
+      return filtered;
+    } catch (err) {
+      console.warn('Failed to refresh incomplete orders from server, keeping local list:', err);
+      return incompleteOrders;
+    }
+  };
+
   const saveIncompleteOrderLead = async (data: Partial<IncompleteOrder>): Promise<IncompleteOrder> => {
     try {
       const saved = await api.saveIncompleteOrder(data);
       setIncompleteOrders(prev => {
-        const existingIdx = prev.findIndex(item => item.id === saved.id || item.customerPhone === saved.customerPhone);
+        const cleanSavedPhone = saved.customerPhone ? saved.customerPhone.replace(/\D/g, '') : '';
+        const existingIdx = prev.findIndex(item => {
+          if (item.id === saved.id) return true;
+          const cleanItemPhone = item.customerPhone ? item.customerPhone.replace(/\D/g, '') : '';
+          if (cleanSavedPhone && cleanItemPhone && cleanSavedPhone.length >= 6 && cleanItemPhone === cleanSavedPhone && item.status !== 'recovered') {
+            return true;
+          }
+          return false;
+        });
+
+        let next: IncompleteOrder[];
         if (existingIdx !== -1) {
-          const clone = [...prev];
-          clone[existingIdx] = saved;
-          return clone;
+          next = [...prev];
+          next[existingIdx] = { ...next[existingIdx], ...saved };
+        } else {
+          next = [saved, ...prev];
         }
-        return [saved, ...prev];
+
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('amarchoice_incomplete_orders', JSON.stringify(next.slice(0, 100)));
+          }
+        } catch {
+          // ignore
+        }
+        return next;
       });
       return saved;
     } catch (err) {
       console.warn('Silent save incomplete order error (swallowed):', err);
       const fallback: IncompleteOrder = {
-        id: `inc-${Date.now()}`,
+        id: data.id || `inc-${Date.now()}`,
         landingPageId: data.landingPageId || 'default',
         landingPageTitle: data.landingPageTitle || 'অর্ডার পেজ',
         landingPageSlug: data.landingPageSlug || 'default',
@@ -864,15 +1355,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updatedAt: new Date().toISOString(),
         status: 'uncontacted'
       };
+      setIncompleteOrders(prev => {
+        const next = [fallback, ...prev.filter(p => p.id !== fallback.id)];
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('amarchoice_incomplete_orders', JSON.stringify(next.slice(0, 100)));
+          }
+        } catch {
+          // ignore
+        }
+        return next;
+      });
       return fallback;
     }
   };
 
   const updateIncompleteOrder = async (
     id: string,
-    data: {
-      status?: IncompleteOrder['status'];
-      notes?: string;
+    data: Partial<IncompleteOrder> & {
       contactLog?: { method: 'call' | 'sms' | 'whatsapp'; note?: string };
     }
   ) => {
@@ -893,9 +1393,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           return {
             ...item,
-            status: data.status || item.status,
-            notes: data.notes !== undefined ? data.notes : item.notes,
-            contactLogs: logs
+            ...data,
+            contactLogs: logs,
+            updatedAt: new Date().toISOString()
           };
         }
         return item;
@@ -1016,12 +1516,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         createAdminUser,
         deleteAdminUser,
         createOrder,
+        updateOrder,
         updateOrderStatus,
         deleteOrder,
+        bulkActionOrders,
         sendToCourier,
         checkCourierStatus,
         syncAllCouriers,
         sendSms,
+        sendOrderConfirmSms,
+        bulkSendConfirmSms,
         createLandingPage,
         updateLandingPage,
         setDefaultLandingPage,
@@ -1034,6 +1538,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         unblockCustomer,
         blockIp,
         unblockIp,
+        refreshIncompleteOrders,
         saveIncompleteOrderLead,
         updateIncompleteOrder,
         convertIncompleteToOrder,

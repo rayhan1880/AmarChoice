@@ -120,9 +120,7 @@ export default function AdminDashboard() {
   };
 
   const handleLogout = () => {
-    if (window.confirm(t.logoutConfirm)) {
-      logout();
-    }
+    logout();
   };
 
   // Sidebar navigation content used by both desktop sidebar and mobile drawer

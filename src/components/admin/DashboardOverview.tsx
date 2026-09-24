@@ -16,7 +16,7 @@ import {
   ShieldCheck,
   AlertCircle
 } from 'lucide-react';
-import { translations, toLocalizedNumber, toLocalizedCurrency } from '../../utils/translations.ts';
+import { translations, toLocalizedNumber, toLocalizedCurrency, formatOrderRelativeTime } from '../../utils/translations.ts';
 
 export default function DashboardOverview() {
   const {
@@ -347,8 +347,23 @@ export default function DashboardOverview() {
                       {order.landingPageTitle}
                     </span>
                   </div>
-                  <p className="text-stone-600 text-[11px] mt-0.5">
-                    {order.customerName} ({order.customerPhone})
+                  <p className="text-stone-600 text-[11px] mt-0.5 flex items-center gap-1.5 flex-wrap">
+                    <span>{order.customerName} ({order.customerPhone})</span>
+                    <span>•</span>
+                    {(() => {
+                      const rel = formatOrderRelativeTime(order.createdAt, adminLanguage);
+                      return (
+                        <span
+                          className={`text-[10px] inline-flex items-center gap-0.5 ${
+                            rel.isRecent ? 'text-amber-700 font-bold' : 'text-stone-400'
+                          }`}
+                          title={rel.fullTooltip}
+                        >
+                          <Clock className="w-2.5 h-2.5 shrink-0 text-amber-600" />
+                          <span>{rel.display}</span>
+                        </span>
+                      );
+                    })()}
                   </p>
                 </div>
 

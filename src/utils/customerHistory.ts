@@ -1,4 +1,4 @@
-import { Order } from '../types.ts';
+import { Order, CourierCustomerHistory } from '../types.ts';
 
 export interface CustomerHistorySummary {
   phone: string;
@@ -15,6 +15,7 @@ export interface CustomerHistorySummary {
   lastKnownIp?: string;
   lastKnownAddress?: string;
   orders: Order[];
+  courierHistory?: CourierCustomerHistory;
 }
 
 export const normalizePhoneNumber = (phone: string): string => {

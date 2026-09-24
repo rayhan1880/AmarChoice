@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, MouseEvent, FormEvent, TouchEvent } from 'react';
+import { useState, useEffect, useRef, useCallback, MouseEvent, FormEvent, TouchEvent } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { LandingPage, OrderItem, VariantOptionField, ProductVariant } from '../../types.ts';
 import { INITIAL_LANDING_PAGES } from '../../data/initialData.ts';
@@ -10,9 +10,11 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Play, 
-  Pause 
+  Pause,
+  PackageCheck
 } from 'lucide-react';
 import EcommerceStoreView from './EcommerceStoreView.tsx';
+import CustomerOrderHistoryModal from './CustomerOrderHistoryModal.tsx';
 
 function WhatsAppIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -54,7 +56,7 @@ function getProductCustomFields(prod: ProductVariant): VariantOptionField[] {
 }
 
 export default function LandingPageView() {
-  const { activeLandingPage, createOrder, saveIncompleteOrderLead, trackPixelEvent, setViewMode, setAdminTab } = useApp();
+  const { activeLandingPage, createOrder, saveIncompleteOrderLead, trackPixelEvent, setAdminTab } = useApp();
 
   const page: LandingPage = activeLandingPage || INITIAL_LANDING_PAGES[0];
 
@@ -83,7 +85,9 @@ export default function LandingPageView() {
   const [custAddress, setCustAddress] = useState('');
   const [warnMsg, setWarnMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState<{ id: string; total: number } | null>(null);
+  const [orderSuccess, setOrderSuccess] = useState<{ id: string; total: number; phone?: string } | null>(null);
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+  const [orderHistoryPhone, setOrderHistoryPhone] = useState('');
 
   // Countdown timer state
   const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
@@ -395,30 +399,82 @@ export default function LandingPageView() {
 
   const grandTotal = subtotal + (subtotal > 0 ? deliveryCharge : 0);
 
+  // Stable ID for current checkout session lead
+  const leadSessionIdRef = useRef<string>(`inc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`);
+
+  // Fallback product items if customer hasn't explicitly checked variant card
+  const fallbackProduct = page.products && page.products.length > 0 ? page.products[0] : null;
+  const effectiveItemsList: OrderItem[] = selectedItemsList.length > 0
+    ? selectedItemsList
+    : (fallbackProduct ? [{
+        variantId: fallbackProduct.id,
+        variantName: fallbackProduct.name,
+        size: 'Standard',
+        quantity: 1,
+        unitPrice: fallbackProduct.price,
+        subtotal: fallbackProduct.price,
+        image: fallbackProduct.image
+      }] : []);
+
+  const effectiveSubtotal = subtotal > 0 ? subtotal : (fallbackProduct?.price || 0);
+  const effectiveGrandTotal = effectiveSubtotal + (effectiveSubtotal > 0 ? deliveryCharge : 0);
+
   // Auto-capture Abandoned / Incomplete checkout leads
+  const captureIncompleteLead = useCallback((customStep?: string, customNote?: string) => {
+    if (orderSuccess || !page) return;
+    const bnToEn: Record<string, string> = { '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9' };
+    const phoneClean = custPhone.replace(/[০-৯]/g, d => bnToEn[d] || d).replace(/\D/g, '');
+    const hasPhone = phoneClean.length >= 6 || custPhone.trim().length >= 6;
+    const hasNameOrAddr = (custName.trim().length > 1 && custName.trim() !== 'অজানা ক্রেতা') || custAddress.trim().length > 3;
+
+    if (!hasPhone && !hasNameOrAddr) return;
+
+    saveIncompleteOrderLead({
+      id: leadSessionIdRef.current,
+      landingPageId: page.id,
+      landingPageTitle: page.title,
+      landingPageSlug: page.slug,
+      customerName: custName.trim() || 'অজানা ক্রেতা',
+      customerPhone: custPhone.trim(),
+      customerAddress: custAddress.trim(),
+      items: effectiveItemsList,
+      deliveryLocation,
+      subtotal: effectiveSubtotal,
+      deliveryCharge,
+      grandTotal: effectiveGrandTotal,
+      step: (customStep as any) || (custAddress.trim() ? 'address_entered' : (hasPhone ? 'phone_entered' : 'details_entered')),
+      notes: customNote || 'চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি'
+    });
+  }, [orderSuccess, page, custPhone, custName, custAddress, effectiveItemsList, deliveryLocation, effectiveSubtotal, deliveryCharge, effectiveGrandTotal, saveIncompleteOrderLead]);
+
   useEffect(() => {
-    if (orderSuccess || !page || !custPhone.trim() || custPhone.trim().length < 6) return;
+    if (orderSuccess || !page) return;
+    const bnToEn: Record<string, string> = { '০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9' };
+    const phoneClean = custPhone.replace(/[০-৯]/g, d => bnToEn[d] || d).replace(/\D/g, '');
+    const hasPhone = phoneClean.length >= 6 || custPhone.trim().length >= 6;
+    const hasNameOrAddr = (custName.trim().length > 1 && custName.trim() !== 'অজানা ক্রেতা') || custAddress.trim().length > 3;
 
+    if (!hasPhone && !hasNameOrAddr) return;
+
+    // Trigger save immediately if full 11 digits phone is entered, else debounce 500ms
+    const delay = phoneClean.length >= 11 ? 150 : 500;
     const timer = setTimeout(() => {
-      saveIncompleteOrderLead({
-        landingPageId: page.id,
-        landingPageTitle: page.title,
-        landingPageSlug: page.slug,
-        customerName: custName.trim() || 'অজানা ক্রেতা',
-        customerPhone: custPhone.trim(),
-        customerAddress: custAddress.trim(),
-        items: selectedItemsList,
-        deliveryLocation,
-        subtotal,
-        deliveryCharge,
-        grandTotal,
-        step: custAddress.trim() ? 'address_entered' : (custPhone.trim() ? 'phone_entered' : 'details_entered'),
-        notes: 'চেকআউট ফর্ম পূরণ করেছেন কিন্তু কনফার্ম করেননি'
-      });
-    }, 1200);
+      captureIncompleteLead();
+    }, delay);
 
-    return () => clearTimeout(timer);
-  }, [custPhone, custName, custAddress, deliveryLocation, selectedItemsList, subtotal, deliveryCharge, grandTotal, orderSuccess, page, saveIncompleteOrderLead]);
+    const handleBeforeUnload = () => {
+      captureIncompleteLead('abandoned', 'পেজ ত্যাগ করার সময় স্বয়ংক্রিয়ভাবে সংগৃহীত লিড');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
+    };
+  }, [custPhone, custName, custAddress, captureIncompleteLead, orderSuccess, page]);
 
   // Scroll to Order Form
   const scrollToOrderForm = () => {
@@ -434,11 +490,13 @@ export default function LandingPageView() {
   const handleSubmitOrder = async (e: FormEvent) => {
     e.preventDefault();
     if (!custName.trim() || !custPhone.trim() || !custAddress.trim()) {
+      captureIncompleteLead('details_entered', 'অর্ডার ফর্ম অসম্পূর্ণ রেখে সাবমিট করার চেষ্টা করেছিলেন');
       setWarnMsg('⚠️ অনুগ্রহ করে আপনার নাম, মোবাইল নাম্বার এবং সম্পূর্ণ ঠিকানা প্রদান করুন।');
       return;
     }
 
     if (selectedItemsList.length === 0) {
+      captureIncompleteLead('details_entered', 'পণ্য নির্বাচন ছাড়া ফর্ম পূরণ করেছিলেন');
       setWarnMsg('⚠️ অনুগ্রহ করে তালিকা থেকে অন্তত একটি পছন্দের পণ্য সিলেক্ট করুন।');
       scrollToProducts();
       return;
@@ -482,7 +540,9 @@ export default function LandingPageView() {
         notes: ''
       });
 
-      setOrderSuccess({ id: newOrder.id, total: grandTotal });
+      const phoneUsed = custPhone;
+      setOrderSuccess({ id: newOrder.id, total: grandTotal, phone: phoneUsed });
+      setOrderHistoryPhone(phoneUsed);
       // Reset form
       setCustName('');
       setCustPhone('');
@@ -1124,6 +1184,7 @@ export default function LandingPageView() {
                 required
                 value={custName}
                 onChange={e => setCustName(e.target.value)}
+                onBlur={() => captureIncompleteLead()}
                 placeholder="আপনার পূর্ণ নাম লিখুন"
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm bg-stone-50 focus:bg-white"
               />
@@ -1138,6 +1199,7 @@ export default function LandingPageView() {
                 required
                 value={custPhone}
                 onChange={e => setCustPhone(e.target.value)}
+                onBlur={() => captureIncompleteLead()}
                 placeholder="১১ ডিজিটের মোবাইল নাম্বার দিন (যেমন: 01712345678)"
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm bg-stone-50 focus:bg-white"
               />
@@ -1152,6 +1214,7 @@ export default function LandingPageView() {
                 rows={3}
                 value={custAddress}
                 onChange={e => setCustAddress(e.target.value)}
+                onBlur={() => captureIncompleteLead()}
                 placeholder="আপনার জেলা, উপজেলা/ থানা, গ্রাম/ বাসা"
                 className="w-full px-4 py-2.5 rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm bg-stone-50 focus:bg-white resize-none"
               ></textarea>
@@ -1168,47 +1231,47 @@ export default function LandingPageView() {
                   <span>🎉 এই পণ্যের জন্য সারাদেশে ফ্রি ডেলিভারি চলছে!</span>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-2.5">
                   <label
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
                       deliveryLocation === 'inside_dhaka'
-                        ? 'border-rose-600 bg-rose-50/50 ring-2 ring-rose-100'
+                        ? 'border-rose-600 bg-rose-50/60 ring-2 ring-rose-100 shadow-2xs'
                         : 'border-stone-200 hover:border-stone-300 bg-stone-50'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <input
                         type="radio"
                         name="deliveryLocation"
                         checked={deliveryLocation === 'inside_dhaka'}
                         onChange={() => setDeliveryLocation('inside_dhaka')}
-                        className="text-rose-600 focus:ring-rose-500"
+                        className="text-rose-600 focus:ring-rose-500 w-4 h-4 cursor-pointer"
                       />
-                      <span className="text-xs font-semibold text-stone-800">ঢাকার ভিতরে</span>
+                      <span className="text-xs sm:text-sm font-semibold text-stone-800">ঢাকার ভিতরে</span>
                     </div>
-                    <span className="text-xs font-bold text-rose-700">
+                    <span className="text-xs sm:text-sm font-bold text-rose-700">
                       {toBanglaDigits(page.deliveryCharges?.insideDhaka || 60)}৳
                     </span>
                   </label>
 
                   <label
-                    className={`flex items-center justify-between p-3 rounded-xl border cursor-pointer transition-all ${
+                    className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
                       deliveryLocation === 'outside_dhaka'
-                        ? 'border-rose-600 bg-rose-50/50 ring-2 ring-rose-100'
+                        ? 'border-rose-600 bg-rose-50/60 ring-2 ring-rose-100 shadow-2xs'
                         : 'border-stone-200 hover:border-stone-300 bg-stone-50'
                     }`}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5">
                       <input
                         type="radio"
                         name="deliveryLocation"
                         checked={deliveryLocation === 'outside_dhaka'}
                         onChange={() => setDeliveryLocation('outside_dhaka')}
-                        className="text-rose-600 focus:ring-rose-500"
+                        className="text-rose-600 focus:ring-rose-500 w-4 h-4 cursor-pointer"
                       />
-                      <span className="text-xs font-semibold text-stone-800">ঢাকার বাইরে</span>
+                      <span className="text-xs sm:text-sm font-semibold text-stone-800">ঢাকার বাইরে</span>
                     </div>
-                    <span className="text-xs font-bold text-rose-700">
+                    <span className="text-xs sm:text-sm font-bold text-rose-700">
                       {toBanglaDigits(page.deliveryCharges?.outsideDhaka || 120)}৳
                     </span>
                   </label>
@@ -1324,10 +1387,20 @@ export default function LandingPageView() {
             </p>
 
             <div className="flex flex-col gap-2">
+              <a
+                href={`https://wa.me/${(page.callNumber || '01606318193').replace(/\D/g, '').startsWith('88') ? (page.callNumber || '01606318193').replace(/\D/g, '') : '88' + (page.callNumber || '01606318193').replace(/\D/g, '')}?text=${encodeURIComponent(`আসসালামু আলাইকুম, আমি ওয়েবসাইট থেকে একটি অর্ডার করেছি।\nঅর্ডার আইডি: ${orderSuccess.id}\nসর্বমোট বিল: ${orderSuccess.total}৳`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-sm font-bold shadow flex items-center justify-center gap-2 transition"
+              >
+                <WhatsAppIcon className="w-4 h-4 fill-white" />
+                <span>হোয়াটসঅ্যাপে মেসেজ দিয়ে কনফার্ম করুন</span>
+              </a>
+
               <button
                 type="button"
                 onClick={() => setOrderSuccess(null)}
-                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow transition"
+                className="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl text-xs font-semibold transition"
               >
                 ঠিক আছে
               </button>
@@ -1335,6 +1408,14 @@ export default function LandingPageView() {
           </div>
         </div>
       )}
+
+      {/* Customer Order History & Courier Report Modal */}
+      <CustomerOrderHistoryModal
+        isOpen={isOrderHistoryOpen}
+        onClose={() => setIsOrderHistoryOpen(false)}
+        initialPhone={orderHistoryPhone}
+        themeColor={themeColor}
+      />
 
       {/* Floating WhatsApp Action Button */}
       <a

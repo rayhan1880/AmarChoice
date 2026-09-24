@@ -5,7 +5,6 @@ import {
   ShoppingBag,
   Menu
 } from 'lucide-react';
-import LanguageSwitcher from './admin/LanguageSwitcher.tsx';
 import { translations } from '../utils/translations.ts';
 
 export default function Navigation() {
@@ -26,9 +25,7 @@ export default function Navigation() {
   }
 
   const handleLogout = () => {
-    if (window.confirm(t.logoutConfirm)) {
-      logout();
-    }
+    logout();
   };
 
   return (
@@ -73,10 +70,9 @@ export default function Navigation() {
             </button>
           </div>
 
-          {/* Right Section: Language Switcher, User details & Logout */}
+          {/* Right Section: User details & Logout */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Language Switcher Component */}
-            <LanguageSwitcher variant="navbar" />
+            {/* Language Switcher hidden per user request */}
 
             {/* User Profile Badge */}
             {currentUser && (

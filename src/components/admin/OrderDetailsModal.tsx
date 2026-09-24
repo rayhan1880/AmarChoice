@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { Order, OrderStatus } from '../../types.ts';
+import { useState, useMemo, useEffect } from 'react';
+import { Order, OrderStatus, CourierCustomerHistory } from '../../types.ts';
 import { useApp } from '../../context/AppContext.tsx';
 import { api } from '../../services/api.ts';
 import { getCustomerHistory } from '../../utils/customerHistory.ts';
@@ -7,7 +7,8 @@ import { getCourierStatusDisplay, getCourierProviderInfo } from '../../utils/cou
 import {
   toLocalizedNumber,
   toLocalizedCurrency,
-  toLocalizedDate
+  toLocalizedDate,
+  formatOrderRelativeTime
 } from '../../utils/translations.ts';
 import {
   X,
@@ -29,30 +30,92 @@ import {
   RotateCcw,
   Sparkles,
   UserCheck,
-  Eye
+  Eye,
+  Pencil
 } from 'lucide-react';
 import InvoiceModal from './InvoiceModal.tsx';
 import CustomerHistoryModal from './CustomerHistoryModal.tsx';
+import { OrderEditModal } from './OrderEditModal.tsx';
 
 interface OrderDetailsModalProps {
   order: Order;
+  courierHistory?: CourierCustomerHistory;
+  initialTab?: 'details' | 'courier' | 'sms';
   onClose: () => void;
 }
 
-export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalProps) {
-  const { orders, updateOrderStatus, sendToCourier, checkCourierStatus, sendSms, settings, refreshAll, adminLanguage } = useApp();
+export default function OrderDetailsModal({ order, courierHistory, initialTab = 'details', onClose }: OrderDetailsModalProps) {
+  const { orders, landingPages, updateOrderStatus, sendToCourier, checkCourierStatus, sendSms, sendOrderConfirmSms, settings, refreshAll, adminLanguage } = useApp();
   const isBn = adminLanguage === 'bn';
 
-  const [activeTab, setActiveTab] = useState<'details' | 'courier' | 'sms'>('details');
-  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(order.status);
-  const [orderNotes, setOrderNotes] = useState(order.notes || '');
+  const [currentOrder, setCurrentOrder] = useState<Order>(order);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  // Always bind to the most up-to-date order object from state/orders
+  const liveOrder = orders.find(o => o.id === order.id) || currentOrder || order;
+
+  useEffect(() => {
+    setCurrentOrder(order);
+  }, [order]);
+
+  const matchedPage = useMemo(() => {
+    return landingPages?.find(p => p.id === liveOrder.landingPageId || p.slug === liveOrder.landingPageSlug);
+  }, [landingPages, liveOrder.landingPageId, liveOrder.landingPageSlug]);
+
+  const hasPageSpecificSms = matchedPage?.smsTemplates?.enabled;
+
+  const [activeTab, setActiveTab] = useState<'details' | 'courier' | 'sms'>(initialTab);
+  const [currentStatus, setCurrentStatus] = useState<OrderStatus>(liveOrder.status);
+  const [orderNotes, setOrderNotes] = useState(liveOrder.notes || '');
   const [isSavingStatus, setIsSavingStatus] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
 
+  // Direct manual Confirm SMS state
+  const [isSendingConfirmSms, setIsSendingConfirmSms] = useState(false);
+  const [confirmSmsFeedback, setConfirmSmsFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleSendConfirmSmsDirectly = async (autoConfirm = true) => {
+    try {
+      setIsSendingConfirmSms(true);
+      setConfirmSmsFeedback(null);
+      const res = await sendOrderConfirmSms(liveOrder.id, { updateStatusToConfirmed: autoConfirm });
+      if (res.success) {
+        if (autoConfirm) setCurrentStatus('confirmed');
+        setConfirmSmsFeedback({
+          success: true,
+          message: res.message || 'কাস্টমারকে কনফার্মেশন এসএমএস সফলভাবে পাঠানো হয়েছে!'
+        });
+      } else {
+        setConfirmSmsFeedback({
+          success: false,
+          message: res.error || 'কনফার্মেশন এসএমএস পাঠাতে ব্যর্থ হয়েছে।'
+        });
+      }
+    } catch (err: any) {
+      setConfirmSmsFeedback({
+        success: false,
+        message: err?.message || 'এসএমএস পাঠাতে সমস্যা হয়েছে।'
+      });
+    } finally {
+      setIsSendingConfirmSms(false);
+    }
+  };
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  useEffect(() => {
+    setCurrentStatus(liveOrder.status);
+    setOrderNotes(liveOrder.notes || '');
+  }, [liveOrder.status, liveOrder.notes]);
+
   // Customer order history summary
   const customerHistory = useMemo(() => {
-    return getCustomerHistory(order.customerPhone, orders, order.customerName);
-  }, [order.customerPhone, order.customerName, orders]);
+    return getCustomerHistory(liveOrder.customerPhone, orders, liveOrder.customerName);
+  }, [liveOrder.customerPhone, liveOrder.customerName, orders]);
 
   // Google Sheet state
   const [isSyncingSheet, setIsSyncingSheet] = useState(false);
@@ -61,7 +124,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
   const handleSyncToSheet = async () => {
     try {
       setIsSyncingSheet(true);
-      const res = await api.syncOrderToSheet(order.id);
+      const res = await api.syncOrderToSheet(liveOrder.id);
       setSheetFeedback({ success: true, message: res.message });
       await refreshAll();
     } catch (err: unknown) {
@@ -74,17 +137,18 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
 
   // Courier state
   const [courierProvider, setCourierProvider] = useState<'steadfast' | 'pathao'>(
-    order.courier?.provider === 'pathao' ? 'pathao' : 'steadfast'
+    liveOrder.courier?.provider === 'pathao' ? 'pathao' : 'steadfast'
   );
-  const [courierFee, setCourierFee] = useState<number>(order.deliveryCharge || 120);
-  const [courierNote, setCourierNote] = useState<string>(order.notes || 'Handle with care');
+  const [courierFee, setCourierFee] = useState<number>(liveOrder.deliveryCharge || 120);
+  const [courierNote, setCourierNote] = useState<string>(liveOrder.notes || 'Handle with care');
   const [isDispatchingCourier, setIsDispatchingCourier] = useState(false);
   const [isCheckingCourier, setIsCheckingCourier] = useState(false);
+  const [courierFeedback, setCourierFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
   // SMS state
   const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>('orderConfirmed');
   const [customSmsText, setCustomSmsText] = useState<string>('');
-  const [customPhone, setCustomPhone] = useState<string>(order.customerPhone);
+  const [customPhone, setCustomPhone] = useState<string>(liveOrder.customerPhone);
   const [isSendingSms, setIsSendingSms] = useState(false);
   const [smsFeedback, setSmsFeedback] = useState<string | null>(null);
 
@@ -95,7 +159,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
   const handleSaveStatus = async () => {
     setIsSavingStatus(true);
     try {
-      await updateOrderStatus(order.id, currentStatus, orderNotes);
+      await updateOrderStatus(liveOrder.id, currentStatus, orderNotes);
     } finally {
       setIsSavingStatus(false);
     }
@@ -104,11 +168,20 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
   // Handle Courier Dispatch
   const handleCourierEntry = async () => {
     setIsDispatchingCourier(true);
+    setCourierFeedback(null);
     try {
-      await sendToCourier(order.id, courierProvider, courierFee, courierNote);
+      const res = await sendToCourier(liveOrder.id, courierProvider, courierFee, courierNote);
       setCurrentStatus('in_courier');
-    } catch (err) {
+      setCourierFeedback({
+        success: true,
+        message: res?.message || (isBn ? 'স্টিডফাস্ট কুরিয়ারে পার্সেল সফলভাবে এন্ট্রি হয়েছে!' : 'Courier parcel booked successfully!')
+      });
+    } catch (err: any) {
       console.error('Courier dispatch error:', err);
+      setCourierFeedback({
+        success: false,
+        message: err?.message || (isBn ? 'কুরিয়ারে এন্ট্রি করা যায়নি। কাস্টমারের ১১ ডিজিটের সঠিক মোবাইল নম্বর ও সেটিংস যাচাই করুন।' : 'Failed to send to courier.')
+      });
     } finally {
       setIsDispatchingCourier(false);
     }
@@ -118,7 +191,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
   const handleCheckTracking = async () => {
     setIsCheckingCourier(true);
     try {
-      const courierStatus = await checkCourierStatus(order.id);
+      const courierStatus = await checkCourierStatus(liveOrder.id);
       const s = (courierStatus || '').toLowerCase();
       if (s.includes('delivered') || s.includes('completed')) {
         setCurrentStatus('delivered');
@@ -138,17 +211,22 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
 
   // Format template text
   const getFormattedTemplate = (key: string): string => {
-    const templates = settings.smsGateway.templates;
-    let raw = templates[key as keyof typeof templates] || '';
+    const pageTpls = matchedPage?.smsTemplates?.enabled ? matchedPage.smsTemplates : null;
+    const globalTpls = settings.smsGateway.templates;
+    const raw = (pageTpls && (pageTpls as any)[key]) || (globalTpls as any)[key] || '';
+    const brand = matchedPage?.brandName || 'AmarChoice';
+
     if (!raw) {
-      raw = `প্রিয় ${order.customerName}, আপনার অর্ডার #${order.id} প্রসেসিংয়ে রয়েছে। AmarChoice`;
+      return `প্রিয় ${order.customerName}, আপনার অর্ডার #${order.id} প্রসেসিংয়ে রয়েছে। মোট বিল: ${order.grandTotal}৳। - ${brand}`;
     }
+
     return raw
-      .replace('{customer_name}', order.customerName)
-      .replace('{order_id}', order.id)
-      .replace('{total}', String(order.grandTotal))
-      .replace('{tracking_code}', order.courier?.trackingCode || 'TRK-PENDING')
-      .replace('{courier_name}', order.courier?.provider === 'pathao' ? 'Pathao' : 'Steadfast');
+      .replace(/\{customer_name\}/gi, order.customerName)
+      .replace(/\{order_id\}/gi, order.id)
+      .replace(/\{total\}/gi, String(order.grandTotal))
+      .replace(/\{brand_name\}/gi, brand)
+      .replace(/\{tracking_code\}/gi, order.courier?.trackingCode || 'TRK-PENDING')
+      .replace(/\{courier_name\}/gi, order.courier?.provider === 'pathao' ? 'Pathao' : 'Steadfast');
   };
 
   // Handle Send SMS
@@ -157,11 +235,16 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
     setSmsFeedback(null);
     try {
       const messageText = customSmsText.trim() || getFormattedTemplate(selectedTemplateKey);
-      await sendSms(order.id, messageText, customPhone);
-      setSmsFeedback('এসএমএস সফলভাবে পাঠানো হয়েছে!');
-      setCustomSmsText('');
-    } catch (err) {
-      setSmsFeedback('এসএমএস পাঠাতে সমস্যা হয়েছে।');
+      const res = await sendSms(order.id, messageText, customPhone);
+      if (res && res.error) {
+        setSmsFeedback(`❌ এসএমএস পাঠানো যায়নি: ${res.error}`);
+      } else {
+        setSmsFeedback('✅ এসএমএস সফলভাবে পাঠানো হয়েছে!');
+        setCustomSmsText('');
+        await refreshAll();
+      }
+    } catch (err: any) {
+      setSmsFeedback(`❌ এসএমএস পাঠাতে সমস্যা হয়েছে: ${err?.message || 'গেটওয়ে কানেকশন ব্যর্থ'}`);
     } finally {
       setIsSendingSms(false);
     }
@@ -199,17 +282,53 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                 {statusBangla[order.status]}
               </span>
             </div>
-            <p className="text-xs text-stone-500 mt-0.5 flex items-center gap-2">
+            <div className="text-xs text-stone-500 mt-0.5 flex items-center gap-2 flex-wrap">
               <span>অন-পেইজ: <strong className="text-stone-700">{order.landingPageTitle}</strong></span>
               <span>•</span>
-              <span className="flex items-center gap-1">
-                <Calendar className="w-3 h-3 text-stone-400" />
-                {new Date(order.createdAt).toLocaleString('bn-BD')}
-              </span>
-            </p>
+              {(() => {
+                const rel = formatOrderRelativeTime(order.createdAt, adminLanguage);
+                return (
+                  <span
+                    className={`flex items-center gap-1 ${
+                      rel.isRecent ? 'text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200' : 'text-stone-600'
+                    }`}
+                    title={rel.fullTooltip}
+                  >
+                    <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                    <span>{rel.display}</span>
+                    {rel.isRecent && (
+                      <span className="text-[10px] text-stone-400 font-normal">({rel.fullTooltip})</span>
+                    )}
+                  </span>
+                );
+              })()}
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleSendConfirmSmsDirectly(true)}
+              disabled={isSendingConfirmSms}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold transition border border-emerald-300 shadow-2xs cursor-pointer disabled:opacity-50"
+              title={isBn ? 'কাস্টমারকে সরাসরি অর্ডার কনফার্মেশন SMS পাঠান' : 'Send Order Confirm SMS directly'}
+            >
+              {isSendingConfirmSms ? (
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+              ) : (
+                <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+              )}
+              <span>{isBn ? '💬 কনফার্ম SMS' : 'Confirm SMS'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-lg text-xs font-bold transition border border-amber-300 shadow-2xs cursor-pointer"
+              title={isBn ? 'গ্রাহকের তথ্য ও অর্ডার এডিট করুন' : 'Edit customer info & order'}
+            >
+              <Pencil className="w-3.5 h-3.5 text-amber-700" />
+              <span>{isBn ? '✏️ এডিট' : 'Edit'}</span>
+            </button>
             <button
               type="button"
               onClick={() => setShowInvoice(true)}
@@ -227,6 +346,33 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
             </button>
           </div>
         </div>
+
+        {/* Confirm SMS Feedback Banner */}
+        {confirmSmsFeedback && (
+          <div
+            className={`mt-2 p-3 rounded-xl border text-xs flex items-center justify-between gap-2 shrink-0 ${
+              confirmSmsFeedback.success
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+                : 'bg-rose-50 border-rose-300 text-rose-900'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {confirmSmsFeedback.success ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              )}
+              <span className="font-semibold">{confirmSmsFeedback.message}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfirmSmsFeedback(null)}
+              className="text-stone-400 hover:text-stone-700 p-1"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Tab Navigation */}
         <div className="flex border-b border-stone-200 mt-2 shrink-0">
@@ -287,6 +433,15 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
+                      onClick={() => setShowEditModal(true)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold transition shadow-2xs cursor-pointer"
+                      title={isBn ? 'কাস্টমারের নাম, ফোন, ঠিকানা ও অর্ডার এডিট করুন' : 'Edit customer info & order'}
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-amber-700" />
+                      <span>{isBn ? 'তথ্য এডিট' : 'Edit Info'}</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => setShowCustomerModal(true)}
                       className="flex items-center gap-1 px-2.5 py-1 rounded bg-white hover:bg-rose-50 text-stone-700 hover:text-rose-700 border border-stone-300 text-xs font-bold transition shadow-2xs cursor-pointer"
                       title={isBn ? 'এই কাস্টমারের সকল পূর্বের অর্ডার ও বিস্তারিত দেখুন' : 'View all orders for this customer'}
@@ -315,19 +470,74 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
-                    <span className="text-stone-500">নাম:</span>
+                    <span className="text-stone-500">{isBn ? 'নাম:' : 'Name:'}</span>
                     <p className="font-bold text-sm text-stone-900">{order.customerName}</p>
                   </div>
                   <div>
-                    <span className="text-stone-500">মোবাইল:</span>
-                    <p className="font-bold text-sm text-rose-700">{order.customerPhone}</p>
+                    <span className="text-stone-500">{isBn ? 'মোবাইল:' : 'Phone:'}</span>
+                    <p className="font-bold text-sm text-rose-700 font-mono">{order.customerPhone}</p>
                   </div>
                   <div className="sm:col-span-2">
-                    <span className="text-stone-500">ঠিকানা:</span>
+                    <span className="text-stone-500">{isBn ? 'ঠিকানা:' : 'Address:'}</span>
                     <p className="font-medium text-stone-800 whitespace-pre-line mt-0.5 bg-white p-2.5 rounded-lg border border-stone-200">
                       {order.customerAddress}
                     </p>
                   </div>
+
+                  {/* Customer Courier Delivery & Cancellation Status Card */}
+                  {courierHistory && (
+                    <div className="sm:col-span-2 bg-stone-900 text-white p-3 rounded-xl border border-stone-700 shadow-2xs">
+                      <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-stone-800">
+                        <div className="flex items-center gap-1.5">
+                          <Truck className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                          <span className="text-xs font-bold text-white">
+                            {isBn ? 'কুরিয়ার ডেলিভারি ও ক্যানসেল রেকর্ড' : 'Courier Delivery & Cancellation Record'}
+                          </span>
+                          {courierHistory.isLiveCourier ? (
+                            <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/80 px-1.5 py-0.2 rounded border border-emerald-800">
+                              Steadfast Live
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-medium text-stone-400 bg-stone-800 px-1.5 py-0.2 rounded border border-stone-700">
+                              {isBn ? 'স্টোর রেকর্ড' : 'Store Record'}
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomerModal(true)}
+                          className="text-[10px] text-rose-400 hover:text-rose-300 font-bold underline cursor-pointer"
+                        >
+                          {isBn ? 'বিস্তারিত প্রোফাইল →' : 'Full Profile →'}
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-center">
+                        <div className="bg-stone-800/80 p-2 rounded-lg border border-stone-700/80">
+                          <span className="text-[10px] text-stone-400 block">{isBn ? 'মোট পার্সেল' : 'Total'}</span>
+                          <span className="text-base font-bold text-white block mt-0.5">
+                            {toLocalizedNumber(courierHistory.totalParcels, adminLanguage)}
+                          </span>
+                        </div>
+                        <div className="bg-emerald-950/40 p-2 rounded-lg border border-emerald-800/60">
+                          <span className="text-[10px] text-emerald-300 block">✅ {isBn ? 'রিসিভ / ডেলিভার্ড' : 'Delivered'}</span>
+                          <span className="text-base font-bold text-emerald-400 block mt-0.5">
+                            {toLocalizedNumber(courierHistory.totalDelivered, adminLanguage)}
+                          </span>
+                        </div>
+                        <div className="bg-rose-950/40 p-2 rounded-lg border border-rose-800/60">
+                          <span className="text-[10px] text-rose-300 block">❌ {isBn ? 'ক্যানসেল / বাতিল' : 'Cancelled'}</span>
+                          <span className="text-base font-bold text-rose-400 block mt-0.5">
+                            {toLocalizedNumber(courierHistory.totalCancelled, adminLanguage)}
+                          </span>
+                        </div>
+                      </div>
+                      {courierHistory.notice && (
+                        <p className="text-[10px] text-stone-400 mt-2 italic">
+                          ℹ️ {courierHistory.notice}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -425,14 +635,30 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                     />
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleSaveStatus}
-                  disabled={isSavingStatus}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow disabled:opacity-50"
-                >
-                  {isSavingStatus ? 'সেভ হচ্ছে...' : 'স্ট্যাটাস আপডেট করুন'}
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={handleSaveStatus}
+                    disabled={isSavingStatus}
+                    className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold shadow disabled:opacity-50 cursor-pointer"
+                  >
+                    {isSavingStatus ? 'সেভ হচ্ছে...' : 'স্ট্যাটাস আপডেট করুন'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSendConfirmSmsDirectly(true)}
+                    disabled={isSendingConfirmSms}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow flex items-center gap-1.5 transition disabled:opacity-50 cursor-pointer"
+                    title={isBn ? 'অর্ডারটি কনফার্ম করুন এবং গ্রাহককে এসএমএস পাঠান' : 'Confirm order and send confirmation SMS'}
+                  >
+                    {isSendingConfirmSms ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <MessageSquare className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isSendingConfirmSms ? 'এসএমএস যাচ্ছে...' : (isBn ? '💬 কনফার্ম করুন ও SMS পাঠান' : 'Confirm & Send SMS')}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Google Sheets Integration Card */}
@@ -650,14 +876,31 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
           {/* TAB 2: COURIER (STEADFAST & PATHAO) */}
           {activeTab === 'courier' && (
             <div className="space-y-4">
+              {courierFeedback && (
+                <div
+                  className={`p-3 rounded-xl border text-xs flex items-center gap-2 ${
+                    courierFeedback.success
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900 font-bold'
+                      : 'bg-rose-50 border-rose-300 text-rose-900 font-medium'
+                  }`}
+                >
+                  {courierFeedback.success ? (
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                  )}
+                  <span>{courierFeedback.message}</span>
+                </div>
+              )}
+
               {/* Existing Courier Info (if dispatched) */}
-              {order.courier && order.courier.trackingCode ? (
+              {liveOrder.courier && liveOrder.courier.trackingCode ? (
                 <div className="bg-emerald-50 border border-emerald-300 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Truck className="w-5 h-5 text-emerald-700" />
                       <h4 className="font-bold text-sm text-emerald-900 uppercase">
-                        {order.courier.provider} কুরিয়ারে এন্ট্রি সম্পন্ন!
+                        {liveOrder.courier.provider} কুরিয়ারে এন্ট্রি সম্পন্ন!
                       </h4>
                     </div>
                     <button
@@ -672,8 +915,8 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                   </div>
 
                   {(() => {
-                    const courierInfo = getCourierProviderInfo(order.courier.provider);
-                    const courierStatus = getCourierStatusDisplay(order.courier.status, adminLanguage);
+                    const courierInfo = getCourierProviderInfo(liveOrder.courier.provider);
+                    const courierStatus = getCourierStatusDisplay(liveOrder.courier.status, adminLanguage);
                     return (
                       <div className="space-y-3">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs bg-white p-3.5 rounded-lg border border-emerald-200">
@@ -687,11 +930,11 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                           </div>
                           <div>
                             <span className="text-stone-400 block text-[10px]">{isBn ? 'ট্র্যাকিং কোড:' : 'Tracking Code:'}</span>
-                            <strong className="text-stone-900 font-mono text-sm block mt-0.5">{order.courier.trackingCode}</strong>
+                            <strong className="text-stone-900 font-mono text-sm block mt-0.5">{liveOrder.courier.trackingCode}</strong>
                           </div>
                           <div>
                             <span className="text-stone-400 block text-[10px]">{isBn ? 'কনসাইনমেন্ট আইডি:' : 'Consignment ID:'}</span>
-                            <strong className="text-stone-700 font-mono block mt-0.5">{order.courier.consignmentId || '—'}</strong>
+                            <strong className="text-stone-700 font-mono block mt-0.5">{liveOrder.courier.consignmentId || '—'}</strong>
                           </div>
                           <div>
                             <span className="text-stone-400 block text-[10px]">{isBn ? 'বর্তমান স্ট্যাটাস:' : 'Current Status:'}</span>
@@ -719,9 +962,9 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                               {courierStatus.subLabel && <span className="text-[11px] opacity-80">{courierStatus.subLabel}</span>}
                             </div>
                           </div>
-                          {order.courier.sentAt && (
+                          {liveOrder.courier.sentAt && (
                             <span className="text-[10px] opacity-75 shrink-0">
-                              {isBn ? 'বুকিং:' : 'Booked:'} {toLocalizedDate(new Date(order.courier.sentAt), adminLanguage)}
+                              {isBn ? 'বুকিং:' : 'Booked:'} {toLocalizedDate(new Date(liveOrder.courier.sentAt), adminLanguage)}
                             </span>
                           )}
                         </div>
@@ -739,7 +982,7 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
               {/* Courier Entry Form */}
               <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-4">
                 <h4 className="font-bold text-xs uppercase tracking-wider text-stone-700">
-                  {order.courier?.trackingCode ? 'পুনরায় কুরিয়ার এন্ট্রি / পরিবর্তন' : 'নতুন কুরিয়ার বুকিং এন্ট্রি'}
+                  {liveOrder.courier?.trackingCode ? 'পুনরায় কুরিয়ার এন্ট্রি / পরিবর্তন' : 'নতুন কুরিয়ার বুকিং এন্ট্রি'}
                 </h4>
 
                 {/* Courier Selection Radios */}
@@ -790,16 +1033,16 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                   <p className="font-bold text-stone-600 text-[11px]">কুরিয়ারে পাঠানো হবে এমন তথ্য:</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-stone-700">
                     <div>
-                      <span className="text-stone-400">গ্রাহকের নাম:</span> <strong>{order.customerName}</strong>
+                      <span className="text-stone-400">গ্রাহকের নাম:</span> <strong>{liveOrder.customerName}</strong>
                     </div>
                     <div>
-                      <span className="text-stone-400">মোবাইল:</span> <strong>{order.customerPhone}</strong>
+                      <span className="text-stone-400">মোবাইল:</span> <strong>{liveOrder.customerPhone}</strong>
                     </div>
                     <div className="sm:col-span-2">
-                      <span className="text-stone-400">ঠিকানা:</span> {order.customerAddress}
+                      <span className="text-stone-400">ঠিকানা:</span> {liveOrder.customerAddress}
                     </div>
                     <div>
-                      <span className="text-stone-400">ক্যাশ অন ডেলিভারি (COD):</span> <strong className="text-rose-700">{order.grandTotal}৳</strong>
+                      <span className="text-stone-400">ক্যাশ অন ডেলিভারি (COD):</span> <strong className="text-rose-700">{liveOrder.grandTotal}৳</strong>
                     </div>
                   </div>
                 </div>
@@ -848,11 +1091,21 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
           {activeTab === 'sms' && (
             <div className="space-y-4">
               <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                   <h4 className="font-bold text-xs uppercase tracking-wider text-stone-700">কাস্টমারকে SMS পাঠান</h4>
-                  <span className="text-[11px] text-stone-500">
-                    Sender ID: <strong className="text-rose-700">{settings.smsGateway.senderId || 'AmarChoice'}</strong>
-                  </span>
+                  {hasPageSpecificSms ? (
+                    <span className="text-[11px] text-indigo-700 font-semibold flex items-center gap-1 bg-indigo-50 px-2 py-0.5 rounded-lg border border-indigo-200">
+                      <Sparkles className="w-3 h-3 text-indigo-600" />
+                      <span>অন-পেইজ কাস্টম SMS ({order.landingPageTitle || matchedPage?.title})</span>
+                      <strong className="text-indigo-950 font-mono ml-1">
+                        [{matchedPage?.smsTemplates?.senderId || settings.smsGateway.senderId || 'AmarChoice'}]
+                      </strong>
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-stone-500">
+                      Sender ID: <strong className="text-rose-700">{settings.smsGateway.senderId || 'AmarChoice'}</strong>
+                    </span>
+                  )}
                 </div>
 
                 {/* Template Selector */}
@@ -952,15 +1205,32 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
                   </div>
                 )}
 
-                <button
-                  type="button"
-                  onClick={handleSendSms}
-                  disabled={isSendingSms}
-                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center gap-2 transition disabled:opacity-50"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>{isSendingSms ? 'এসএমএস পাঠানো হচ্ছে...' : 'এসএমএস পাঠান'}</span>
-                </button>
+                <div className="flex flex-col sm:flex-row items-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handleSendSms}
+                    disabled={isSendingSms}
+                    className="w-full sm:flex-1 py-2.5 bg-stone-800 hover:bg-stone-900 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>{isSendingSms ? 'এসএমএস পাঠানো হচ্ছে...' : 'কাস্টম টেক্সট পাঠান'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSendConfirmSmsDirectly(true)}
+                    disabled={isSendingConfirmSms}
+                    className="w-full sm:flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow flex items-center justify-center gap-2 transition disabled:opacity-50 cursor-pointer"
+                    title="কাস্টমারকে তাৎক্ষণিক কনফার্মেশন এসএমএস পাঠান এবং স্ট্যাটাস কনফার্ম করুন"
+                  >
+                    {isSendingConfirmSms ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isSendingConfirmSms ? 'কনফার্ম SMS যাচ্ছে...' : '💬 কনফার্ম করুন ও SMS পাঠান'}</span>
+                  </button>
+                </div>
               </div>
 
               {/* SMS Delivery History / Logs */}
@@ -1018,8 +1288,23 @@ export default function OrderDetailsModal({ order, onClose }: OrderDetailsModalP
       {showCustomerModal && (
         <CustomerHistoryModal
           summary={customerHistory}
+          courierHistory={courierHistory || currentOrder.courierCustomerHistory}
           adminLanguage={adminLanguage}
           onClose={() => setShowCustomerModal(false)}
+        />
+      )}
+
+      {/* Order Edit Modal Overlay */}
+      {showEditModal && (
+        <OrderEditModal
+          order={currentOrder}
+          isOpen={showEditModal}
+          onClose={() => setShowEditModal(false)}
+          onSaved={(updated) => {
+            setCurrentOrder(updated);
+            setCurrentStatus(updated.status);
+            if (updated.notes) setOrderNotes(updated.notes);
+          }}
         />
       )}
     </div>
