@@ -147,6 +147,7 @@ export interface SmsLogItem {
 
 export interface Order {
   id: string;
+  isDemo?: boolean;
   landingPageId: string;
   landingPageTitle: string;
   landingPageSlug: string;
@@ -284,6 +285,7 @@ export interface IncompleteOrderContactLog {
 
 export interface IncompleteOrder {
   id: string;
+  isDemo?: boolean;
   landingPageId: string;
   landingPageTitle: string;
   landingPageSlug: string;

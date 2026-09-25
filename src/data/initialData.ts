@@ -328,7 +328,8 @@ export const INITIAL_LANDING_PAGES: LandingPage[] = [
 
 export const INITIAL_ORDERS: Order[] = [
   {
-    id: 'ORD-1004',
+    id: 'demo-ord-1004',
+    isDemo: true,
     landingPageId: 'lp-mayaboti-1',
     landingPageTitle: 'নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন',
     landingPageSlug: 'mayaboti-dress',
@@ -356,7 +357,8 @@ export const INITIAL_ORDERS: Order[] = [
     notes: 'কল দিয়ে নিশ্চিত করে পাঠাবেন।'
   },
   {
-    id: 'ORD-1003',
+    id: 'demo-ord-1003',
+    isDemo: true,
     landingPageId: 'lp-mayaboti-1',
     landingPageTitle: 'নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন',
     landingPageSlug: 'mayaboti-dress',
@@ -400,7 +402,8 @@ export const INITIAL_ORDERS: Order[] = [
     notes: 'বিকেল ৪টার পর ডেলিভারি দিতে অনুরোধ।'
   },
   {
-    id: 'ORD-1002',
+    id: 'demo-ord-1002',
+    isDemo: true,
     landingPageId: 'lp-smartwatch-2',
     landingPageTitle: 'আল্ট্রা স্মার্টওয়াচ সিরিজ ৯ – প্রিমিয়াম ব্লুটুথ কলিং ঘড়ি',
     landingPageSlug: 'luxury-smartwatch',
@@ -434,7 +437,8 @@ export const INITIAL_ORDERS: Order[] = [
     createdAt: '2026-09-11T16:20:00.000Z'
   },
   {
-    id: 'ORD-1001',
+    id: 'demo-ord-1001',
+    isDemo: true,
     landingPageId: 'lp-mayaboti-1',
     landingPageTitle: 'নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন',
     landingPageSlug: 'mayaboti-dress',
@@ -460,7 +464,8 @@ export const INITIAL_ORDERS: Order[] = [
     createdAt: '2026-09-13T18:00:00.000Z'
   },
   {
-    id: 'ORD-0998',
+    id: 'demo-ord-0998',
+    isDemo: true,
     landingPageId: 'lp-mayaboti-1',
     landingPageTitle: 'নতুন আরাইভাল – স্পেশাল প্রিমিয়াম কালেকশন',
     landingPageSlug: 'mayaboti-dress',
@@ -631,7 +636,8 @@ export const INITIAL_SETTINGS: AppSettings = {
 
 export const INITIAL_INCOMPLETE_ORDERS: IncompleteOrder[] = [
   {
-    id: 'inc-101',
+    id: 'demo-inc-101',
+    isDemo: true,
     landingPageId: 'page-1',
     landingPageTitle: 'প্রিমিয়াম দুবাই চেরি বোরকা কালেকশন',
     landingPageSlug: 'dubai-cherry-borkha',
@@ -660,7 +666,8 @@ export const INITIAL_INCOMPLETE_ORDERS: IncompleteOrder[] = [
     notes: 'চেকআউট ফর্ম পূরণ করেছে কিন্তু অর্ডার কনফার্ম করেনি'
   },
   {
-    id: 'inc-102',
+    id: 'demo-inc-102',
+    isDemo: true,
     landingPageId: 'page-2',
     landingPageTitle: 'আল্ট্রা স্মার্টওয়াচ সিরিজ ৯ - সুপার অ্যামোলেড',
     landingPageSlug: 'ultra-smartwatch-series9',

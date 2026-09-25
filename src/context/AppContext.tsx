@@ -7,6 +7,29 @@ import { initFacebookPixel, initTikTokPixel } from '../utils/pixelTracker.ts';
 
 export type { AdminTab, AdminLanguage };
 
+export function isDemoOrder(o: any): boolean {
+  if (!o) return false;
+  if (o.isDemo === true) return true;
+  if (typeof o.id === 'string' && o.id.toLowerCase().startsWith('demo-')) return true;
+  const demoPhones = new Set(['01556789012', '01934567890', '01823456789', '01711234567']);
+  const demoNames = new Set(['ফাতেমা আক্তার', 'সাকিব হাসান', 'নাসরিন সুলতানা', 'তানভীর আহমেদ']);
+  if (demoPhones.has(o.customerPhone) && demoNames.has(o.customerName)) {
+    return true;
+  }
+  return false;
+}
+
+export function isDemoIncompleteOrder(inc: any): boolean {
+  if (!inc) return false;
+  if (inc.isDemo === true) return true;
+  if (typeof inc.id === 'string' && (inc.id.toLowerCase().startsWith('demo-') || inc.id === 'inc-101' || inc.id === 'inc-102')) {
+    if (['01712000000', '01911445566', '01788112233'].includes(inc.customerPhone) || ['রাকিব হাসান', 'মেহেদী হাসান শুভ', 'ফারজানা আক্তার রেশমা'].includes(inc.customerName)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 interface AppContextType {
   landingPages: LandingPage[];
   activeLandingPage: LandingPage | null;
@@ -533,7 +556,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       // Filter out demo orders/leads permanently if demo was removed
       const finalOrders = isDemoRemoved
-        ? ordersData.filter(o => !['ORD-1001', 'ORD-1002', 'ORD-1003', 'ORD-1004'].includes(o.id))
+        ? ordersData.filter(o => !isDemoOrder(o))
         : ordersData;
 
       // Read any locally stored offline orders (useful if backend server is not running on static host)
@@ -567,7 +590,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       combinedOrders.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
 
       const finalIncOrders = isDemoRemoved
-        ? incOrdersData.filter(i => !['inc-101', 'inc-102'].includes(i.id))
+        ? incOrdersData.filter(i => !isDemoIncompleteOrder(i))
         : incOrdersData;
 
       // Fall back to INITIAL_LANDING_PAGES if backend returns empty or unavailable (e.g. static hosting on Vercel)
@@ -1629,10 +1652,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       }
       const res = await api.clearDemoData(options);
       if (res.orders) {
-        setOrders(res.orders.filter(o => !['ORD-1001', 'ORD-1002', 'ORD-1003', 'ORD-1004'].includes(o.id)));
+        setOrders(res.orders.filter(o => !isDemoOrder(o)));
       }
       if (res.incompleteOrders) {
-        setIncompleteOrders(res.incompleteOrders.filter(i => !['inc-101', 'inc-102'].includes(i.id)));
+        setIncompleteOrders(res.incompleteOrders.filter(i => !isDemoIncompleteOrder(i)));
       }
       if (res.landingPages) {
         setLandingPages(res.landingPages);

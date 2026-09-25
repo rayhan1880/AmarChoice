@@ -67,8 +67,30 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // Persistent flag file: Once demo data is cleared, this flag guarantees demo data will NEVER load again
 const DEMO_REMOVED_FLAG_FILE = path.join(DATA_DIR, 'demo_data_removed.flag');
-const DEMO_ORDER_IDS = new Set(['ORD-1001', 'ORD-1002', 'ORD-1003', 'ORD-1004']);
-const DEMO_INCOMPLETE_IDS = new Set(['inc-101', 'inc-102']);
+
+export function isDemoOrder(o: any): boolean {
+  if (!o) return false;
+  if (o.isDemo === true) return true;
+  if (typeof o.id === 'string' && o.id.toLowerCase().startsWith('demo-')) return true;
+  // Specific demo seed phone numbers and names from initialData
+  const demoPhones = new Set(['01556789012', '01934567890', '01823456789', '01711234567']);
+  const demoNames = new Set(['ফাতেমা আক্তার', 'সাকিব হাসান', 'নাসরিন সুলতানা', 'তানভীর আহমেদ']);
+  if (demoPhones.has(o.customerPhone) && demoNames.has(o.customerName)) {
+    return true;
+  }
+  return false;
+}
+
+export function isDemoIncompleteOrder(inc: any): boolean {
+  if (!inc) return false;
+  if (inc.isDemo === true) return true;
+  if (typeof inc.id === 'string' && (inc.id.toLowerCase().startsWith('demo-') || inc.id === 'inc-101' || inc.id === 'inc-102')) {
+    if (['01712000000', '01911445566', '01788112233'].includes(inc.customerPhone) || ['রাকিব হাসান', 'মেহেদী হাসান শুভ', 'ফারজানা আক্তার রেশমা'].includes(inc.customerName)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function isDemoRemovedOnDisk(): boolean {
   return fs.existsSync(DEMO_REMOVED_FLAG_FILE);
@@ -148,21 +170,21 @@ function loadDatabase(): DatabaseSchema {
         }
       }
 
-      // Orders: If demo removed, NEVER load INITIAL_ORDERS under any circumstance; also strip demo IDs
+      // Orders: If demo removed, NEVER load INITIAL_ORDERS under any circumstance; also strip demo orders
       let loadedOrders: Order[] = [];
       if (Array.isArray(parsed.orders)) {
         loadedOrders = isDemoRemoved
-          ? parsed.orders.filter((o: Order) => !DEMO_ORDER_IDS.has(o.id))
+          ? parsed.orders.filter((o: Order) => !isDemoOrder(o))
           : parsed.orders;
       } else if (!isDemoRemoved) {
         loadedOrders = INITIAL_ORDERS;
       }
 
-      // Incomplete orders: If demo removed, NEVER load INITIAL_INCOMPLETE_ORDERS; also strip demo IDs
+      // Incomplete orders: If demo removed, NEVER load INITIAL_INCOMPLETE_ORDERS; also strip demo incomplete orders
       let loadedIncomplete: IncompleteOrder[] = [];
       if (Array.isArray(parsed.incompleteOrders)) {
         loadedIncomplete = isDemoRemoved
-          ? parsed.incompleteOrders.filter((inc: IncompleteOrder) => !DEMO_INCOMPLETE_IDS.has(inc.id))
+          ? parsed.incompleteOrders.filter((inc: IncompleteOrder) => !isDemoIncompleteOrder(inc))
           : parsed.incompleteOrders;
       } else if (!isDemoRemoved) {
         loadedIncomplete = INITIAL_INCOMPLETE_ORDERS;
@@ -677,11 +699,12 @@ async function startServer() {
     const isDemoRemoved = Boolean(isDemoRemovedOnDisk() || db.isDemoDataRemoved || db.settings?.isDemoDataRemoved);
     let orders = [...db.orders];
     if (isDemoRemoved) {
-      orders = orders.filter(o => !DEMO_ORDER_IDS.has(o.id));
-      if (orders.length !== db.orders.length) {
-        db.orders = orders;
+      const cleanOrders = orders.filter(o => !isDemoOrder(o));
+      if (cleanOrders.length !== db.orders.length) {
+        db.orders = cleanOrders;
         saveDatabase(db);
       }
+      orders = cleanOrders;
     }
     const { landingPageId, status } = req.query;
     if (landingPageId && typeof landingPageId === 'string') {
@@ -3162,7 +3185,7 @@ async function startServer() {
       saveDatabase(db);
     }
     if (isDemoRemoved) {
-      const filtered = db.incompleteOrders.filter(inc => !DEMO_INCOMPLETE_IDS.has(inc.id));
+      const filtered = db.incompleteOrders.filter(inc => !isDemoIncompleteOrder(inc));
       if (filtered.length !== db.incompleteOrders.length) {
         db.incompleteOrders = filtered;
         saveDatabase(db);
