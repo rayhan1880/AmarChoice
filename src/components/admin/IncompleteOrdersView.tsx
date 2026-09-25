@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { IncompleteOrder } from '../../types.ts';
-import { translations, formatOrderRelativeTime } from '../../utils/translations.ts';
+import { translations, formatOrderRelativeTime, toLocalizedNumber } from '../../utils/translations.ts';
 import {
   ShoppingBag,
   Phone,
@@ -28,7 +28,8 @@ import {
   Sparkles,
   User,
   ArrowRight,
-  Pencil
+  Pencil,
+  CheckSquare
 } from 'lucide-react';
 import { IncompleteOrderEditModal } from './IncompleteOrderEditModal.tsx';
 
@@ -46,6 +47,7 @@ export default function IncompleteOrdersView() {
     updateIncompleteOrder,
     convertIncompleteToOrder,
     deleteIncompleteOrder,
+    bulkActionIncompleteOrders,
     clearDemoData,
     settings,
     landingPages,
@@ -63,6 +65,21 @@ export default function IncompleteOrdersView() {
   const [convertedOrderResult, setConvertedOrderResult] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearing, setClearing] = useState(false);
+
+  // Multi-select & Bulk Actions State
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  const [bulkStatus, setBulkStatus] = useState<IncompleteOrder['status']>('contacted');
+  const [isApplyingBulk, setIsApplyingBulk] = useState<boolean>(false);
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean;
+    type: 'single' | 'bulk';
+    id?: string;
+    ids?: string[];
+  }>({ isOpen: false, type: 'bulk' });
+  const [actionFeedbackToast, setActionFeedbackToast] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   // Customer order details modal state
   const [selectedOrderForDetails, setSelectedOrderForDetails] = useState<IncompleteOrder | null>(null);
@@ -145,6 +162,123 @@ export default function IncompleteOrdersView() {
       console.error('Failed to convert incomplete order:', err);
     } finally {
       setConvertingId(null);
+    }
+  };
+
+  // Multi-select Handlers
+  const handleToggleSelectAll = () => {
+    if (filteredOrders.length === 0) return;
+    const allFilteredSelected = filteredOrders.every(o => selectedOrderIds.includes(o.id));
+    if (allFilteredSelected) {
+      const filteredIdsSet = new Set(filteredOrders.map(o => o.id));
+      setSelectedOrderIds(prev => prev.filter(id => !filteredIdsSet.has(id)));
+    } else {
+      const newSelected = new Set(selectedOrderIds);
+      filteredOrders.forEach(o => newSelected.add(o.id));
+      setSelectedOrderIds(Array.from(newSelected));
+    }
+  };
+
+  const handleToggleSelectOrder = (id: string) => {
+    setSelectedOrderIds(prev =>
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleApplyBulkStatus = async (targetStatus: IncompleteOrder['status']) => {
+    if (selectedOrderIds.length === 0) return;
+    try {
+      setIsApplyingBulk(true);
+      const res = await bulkActionIncompleteOrders(selectedOrderIds, 'status', targetStatus);
+      const statusLabel =
+        targetStatus === 'contacted'
+          ? (isBn ? 'কথা হয়েছে' : 'Contacted')
+          : targetStatus === 'recovered'
+          ? (isBn ? 'রিকভার্ড' : 'Recovered')
+          : targetStatus === 'cancelled'
+          ? (isBn ? 'বাতিল' : 'Cancelled')
+          : (isBn ? 'কল দেওয়া হয়নি' : 'Uncontacted');
+
+      setActionFeedbackToast({
+        success: true,
+        message: isBn
+          ? `${toLocalizedNumber(res.count, adminLanguage)}টি অসম্পূর্ণ অর্ডারের স্ট্যাটাস "${statusLabel}" করা হয়েছে`
+          : `Updated status of ${res.count} incomplete order(s) to ${statusLabel}`
+      });
+      setTimeout(() => setActionFeedbackToast(null), 4500);
+      setSelectedOrderIds([]);
+    } catch (err) {
+      console.error('Failed to update bulk status:', err);
+      setActionFeedbackToast({
+        success: false,
+        message: isBn ? 'স্ট্যাটাস পরিবর্তনে সমস্যা হয়েছে' : 'Failed to update statuses'
+      });
+      setTimeout(() => setActionFeedbackToast(null), 4500);
+    } finally {
+      setIsApplyingBulk(false);
+    }
+  };
+
+  const handleBulkConvert = async () => {
+    if (selectedOrderIds.length === 0) return;
+    try {
+      setIsApplyingBulk(true);
+      let count = 0;
+      for (const id of selectedOrderIds) {
+        try {
+          await convertIncompleteToOrder(id);
+          count++;
+        } catch (e) {
+          console.error(`Failed to convert incomplete order ${id}:`, e);
+        }
+      }
+      setActionFeedbackToast({
+        success: true,
+        message: isBn
+          ? `${toLocalizedNumber(count, adminLanguage)}টি অসম্পূর্ণ লিড সফলভাবে কনফার্মড অর্ডারে রূপান্তর করা হয়েছে!`
+          : `Converted ${count} lead(s) to confirmed orders!`
+      });
+      setTimeout(() => setActionFeedbackToast(null), 5000);
+      setSelectedOrderIds([]);
+    } catch (err) {
+      console.error('Failed to bulk convert:', err);
+    } finally {
+      setIsApplyingBulk(false);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsApplyingBulk(true);
+      if (deleteModalState.type === 'single' && deleteModalState.id) {
+        await deleteIncompleteOrder(deleteModalState.id);
+        setSelectedOrderIds(prev => prev.filter(id => id !== deleteModalState.id));
+        setActionFeedbackToast({
+          success: true,
+          message: isBn ? 'অসম্পূর্ণ অর্ডারটি মুছে ফেলা হয়েছে' : 'Incomplete order deleted'
+        });
+      } else {
+        const idsToDelete = deleteModalState.ids || selectedOrderIds;
+        const res = await bulkActionIncompleteOrders(idsToDelete, 'delete');
+        setSelectedOrderIds(prev => prev.filter(id => !idsToDelete.includes(id)));
+        setActionFeedbackToast({
+          success: true,
+          message: isBn
+            ? `${toLocalizedNumber(res.count, adminLanguage)}টি অসম্পূর্ণ অর্ডার মুছে ফেলা হয়েছে`
+            : `Deleted ${res.count} incomplete order(s)`
+        });
+      }
+      setTimeout(() => setActionFeedbackToast(null), 4000);
+      setDeleteModalState({ isOpen: false, type: 'bulk' });
+    } catch (err) {
+      console.error('Failed to delete:', err);
+      setActionFeedbackToast({
+        success: false,
+        message: isBn ? 'মুছে ফেলতে ব্যর্থ হয়েছে' : 'Failed to delete'
+      });
+      setTimeout(() => setActionFeedbackToast(null), 4000);
+    } finally {
+      setIsApplyingBulk(false);
     }
   };
 
@@ -344,7 +478,36 @@ export default function IncompleteOrdersView() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {/* Quick Select All Toggle in Filter Bar */}
+            {filteredOrders.length > 0 && (
+              <div className="flex items-center gap-2 bg-slate-50 hover:bg-slate-100 px-3 py-2 rounded-xl border border-slate-200 transition">
+                <input
+                  type="checkbox"
+                  id="filterBarSelectAll"
+                  checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id))}
+                  ref={input => {
+                    if (input) {
+                      const someSelected = filteredOrders.some(o => selectedOrderIds.includes(o.id));
+                      const allSelected = filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id));
+                      input.indeterminate = someSelected && !allSelected;
+                    }
+                  }}
+                  onChange={handleToggleSelectAll}
+                  className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                />
+                <label htmlFor="filterBarSelectAll" className="text-xs font-bold text-slate-700 cursor-pointer select-none">
+                  {selectedOrderIds.length > 0 ? (
+                    <span className="text-amber-800">
+                      {toLocalizedNumber(selectedOrderIds.length, adminLanguage)} {isBn ? 'টি নির্বাচিত' : 'selected'}
+                    </span>
+                  ) : (
+                    <span>{isBn ? 'সব সিলেক্ট' : 'Select All'}</span>
+                  )}
+                </label>
+              </div>
+            )}
+
             {!settings?.isDemoDataRemoved && incompleteOrders.length > 0 && (
               <button
                 type="button"
@@ -370,6 +533,90 @@ export default function IncompleteOrdersView() {
           </div>
         </div>
 
+        {/* Bulk Action Controls Bar (shown when 1 or more leads selected) */}
+        {selectedOrderIds.length > 0 && (
+          <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-b border-amber-200 px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-200 text-amber-900 border border-amber-300 shadow-2xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-amber-700" />
+                <span>{toLocalizedNumber(selectedOrderIds.length, adminLanguage)} {isBn ? 'টি সিলেক্টেড' : 'selected'}</span>
+              </span>
+
+              <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+                {isBn ? 'মোট সম্ভাব্য মূল্য:' : 'Selected Total:'}{' '}
+                <strong className="text-slate-900 font-mono">
+                  ৳{incompleteOrders
+                    .filter(o => selectedOrderIds.includes(o.id))
+                    .reduce((sum, o) => sum + (o.grandTotal || o.subtotal || 0), 0)
+                    .toLocaleString()}
+                </strong>
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Quick Status Change Dropdown */}
+              <div className="flex items-center gap-1.5 bg-white px-2.5 py-1 rounded-xl border border-amber-300 shadow-2xs">
+                <span className="text-xs font-bold text-slate-600 hidden sm:inline">
+                  {isBn ? 'স্ট্যাটাস বদলান:' : 'Change Status:'}
+                </span>
+                <select
+                  value={bulkStatus}
+                  onChange={e => setBulkStatus(e.target.value as IncompleteOrder['status'])}
+                  className="text-xs font-bold text-slate-800 bg-transparent py-1 pr-1 focus:outline-none cursor-pointer"
+                >
+                  <option value="uncontacted">{isBn ? '⚠️ কল দেওয়া হয়নি' : 'Uncontacted'}</option>
+                  <option value="contacted">{isBn ? '📞 কথা হয়েছে' : 'Contacted'}</option>
+                  <option value="recovered">{isBn ? '✅ রিকভার্ড' : 'Recovered'}</option>
+                  <option value="cancelled">{isBn ? '❌ বাতিল' : 'Cancelled'}</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={() => handleApplyBulkStatus(bulkStatus)}
+                  disabled={isApplyingBulk}
+                  className="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 active:scale-95 text-white rounded-lg text-xs font-bold transition shadow-2xs flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  title={isBn ? 'নির্বাচিতগুলোর স্ট্যাটাস পরিবর্তন করুন' : 'Apply status to selected'}
+                >
+                  {isApplyingBulk ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  <span>{isBn ? 'প্রয়োগ' : 'Apply'}</span>
+                </button>
+              </div>
+
+              {/* Convert Selected Button */}
+              <button
+                type="button"
+                onClick={handleBulkConvert}
+                disabled={isApplyingBulk}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                title={isBn ? 'নির্বাচিত অসম্পূর্ণ লিডগুলো কনফার্মড অর্ডারে রূপান্তর করুন' : 'Convert selected leads to confirmed orders'}
+              >
+                {isApplyingBulk ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                <span>{isBn ? 'কনফার্ম অর্ডার করুন' : 'Convert to Orders'}</span>
+              </button>
+
+              {/* Delete Selected Button */}
+              <button
+                type="button"
+                onClick={() => setDeleteModalState({ isOpen: true, type: 'bulk', ids: selectedOrderIds })}
+                disabled={isApplyingBulk}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer disabled:opacity-50"
+                title={isBn ? 'নির্বাচিত লিডগুলো মুছে ফেলুন' : 'Delete selected leads'}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isBn ? 'মুছে ফেলুন' : 'Delete'}</span>
+              </button>
+
+              {/* Deselect / Cancel */}
+              <button
+                type="button"
+                onClick={() => setSelectedOrderIds([])}
+                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 rounded-xl transition font-medium cursor-pointer"
+              >
+                {isBn ? 'সিলেকশন মুছুন' : 'Clear'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Table */}
         {filteredOrders.length === 0 ? (
           <div className="p-12 text-center text-slate-500">
@@ -388,6 +635,24 @@ export default function IncompleteOrdersView() {
             <table className="w-full text-left text-xs text-slate-600">
               <thead className="bg-slate-50 text-slate-700 uppercase font-semibold border-b border-slate-200">
                 <tr>
+                  {/* Master Select All Checkbox Column */}
+                  <th className="px-4 py-3.5 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      id="bulkSelectAllIncompletes"
+                      checked={filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id))}
+                      ref={input => {
+                        if (input) {
+                          const someSelected = filteredOrders.some(o => selectedOrderIds.includes(o.id));
+                          const allSelected = filteredOrders.length > 0 && filteredOrders.every(o => selectedOrderIds.includes(o.id));
+                          input.indeterminate = someSelected && !allSelected;
+                        }
+                      }}
+                      onChange={handleToggleSelectAll}
+                      className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                      title={isBn ? 'সবগুলো নির্বাচন করুন' : 'Select All'}
+                    />
+                  </th>
                   <th className="px-6 py-3.5">{isBn ? 'গ্রাহক ও মোবাইল' : 'Customer & Phone'}</th>
                   <th className="px-6 py-3.5">{isBn ? 'অন-পেইজ ও পণ্য' : 'Page & Items'}</th>
                   <th className="px-6 py-3.5">{isBn ? 'পরিমাণ ও মোট' : 'Total Value'}</th>
@@ -397,8 +662,21 @@ export default function IncompleteOrdersView() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredOrders.map(order => (
-                  <tr key={order.id} className="hover:bg-amber-50/20 transition group/row">
+                {filteredOrders.map(order => {
+                  const isSelected = selectedOrderIds.includes(order.id);
+                  return (
+                  <tr key={order.id} className={`hover:bg-amber-50/20 transition group/row ${isSelected ? 'bg-amber-100/45' : ''}`}>
+                    {/* Row Checkbox */}
+                    <td className="px-4 py-4 text-center" onClick={e => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelectOrder(order.id)}
+                        className="w-4 h-4 text-amber-600 rounded border-slate-300 focus:ring-amber-500 cursor-pointer"
+                        title={isBn ? 'সিলেক্ট করুন' : 'Select'}
+                      />
+                    </td>
+
                     {/* Customer - Click to view what they wanted to order */}
                     <td
                       className="px-6 py-4 cursor-pointer"
@@ -593,12 +871,8 @@ export default function IncompleteOrdersView() {
                         {/* Delete */}
                         <button
                           type="button"
-                          onClick={() => {
-                            if (confirm(isBn ? 'আপনি কি এই অসম্পূর্ণ লিডটি মুছে ফেলতে চান?' : 'Delete this incomplete lead?')) {
-                              deleteIncompleteOrder(order.id);
-                            }
-                          }}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                          onClick={() => setDeleteModalState({ isOpen: true, type: 'single', id: order.id })}
+                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer"
                           title={isBn ? 'মুছে ফেলুন' : 'Delete'}
                         >
                           <Trash2 className="w-4 h-4" />
@@ -606,7 +880,8 @@ export default function IncompleteOrdersView() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                );
+              })}
               </tbody>
             </table>
           </div>
@@ -1119,6 +1394,144 @@ export default function IncompleteOrdersView() {
           onClose={() => setEditingIncompleteOrder(null)}
           onConvert={(id) => handleConvert(id)}
         />
+      )}
+
+      {/* Floating Bottom Quick Action Bar for multi-selected items */}
+      {selectedOrderIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 text-white px-4 sm:px-6 py-3 rounded-2xl shadow-2xl border border-slate-700 backdrop-blur-md flex flex-wrap items-center justify-between gap-3 animate-in slide-in-from-bottom-5 duration-200 max-w-[95vw]">
+          <div className="flex items-center gap-2 pr-3 border-r border-slate-700">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+            <span className="text-xs font-bold text-amber-300 whitespace-nowrap">
+              {toLocalizedNumber(selectedOrderIds.length, adminLanguage)} {isBn ? 'টি সিলেক্টেড' : 'selected'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <select
+              value={bulkStatus}
+              onChange={e => setBulkStatus(e.target.value as IncompleteOrder['status'])}
+              className="bg-slate-800 text-white text-xs font-bold px-2.5 py-1.5 rounded-xl border border-slate-600 focus:outline-none cursor-pointer"
+            >
+              <option value="uncontacted">{isBn ? '⚠️ কল দেওয়া হয়নি' : 'Uncontacted'}</option>
+              <option value="contacted">{isBn ? '📞 কথা হয়েছে' : 'Contacted'}</option>
+              <option value="recovered">{isBn ? '✅ রিকভার্ড' : 'Recovered'}</option>
+              <option value="cancelled">{isBn ? '❌ বাতিল' : 'Cancelled'}</option>
+            </select>
+            <button
+              type="button"
+              onClick={() => handleApplyBulkStatus(bulkStatus)}
+              disabled={isApplyingBulk}
+              className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-extrabold text-xs rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            >
+              {isApplyingBulk ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+              <span>{isBn ? 'স্ট্যাটাস দিন' : 'Set Status'}</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleBulkConvert}
+            disabled={isApplyingBulk}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            title={isBn ? 'কনফার্মড অর্ডারে রূপান্তর করুন' : 'Convert to Orders'}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isBn ? 'কনফার্ম করুন' : 'Convert'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setDeleteModalState({ isOpen: true, type: 'bulk', ids: selectedOrderIds })}
+            disabled={isApplyingBulk}
+            className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            title={isBn ? 'মুছে ফেলুন' : 'Delete'}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">{isBn ? 'মুছে ফেলুন' : 'Delete'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedOrderIds([])}
+            className="text-xs text-slate-400 hover:text-white px-2 py-1 transition cursor-pointer"
+            title={isBn ? 'সিলেকশন বাতিল' : 'Cancel selection'}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Action Feedback Toast */}
+      {actionFeedbackToast && (
+        <div className={`fixed top-5 right-5 z-50 p-4 rounded-xl shadow-lg border flex items-center gap-2.5 text-xs font-bold animate-in fade-in slide-in-from-top-3 duration-200 ${
+          actionFeedbackToast.success
+            ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+            : 'bg-rose-50 text-rose-900 border-rose-300'
+        }`}>
+          {actionFeedbackToast.success ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          )}
+          <span>{actionFeedbackToast.message}</span>
+        </div>
+      )}
+
+      {/* In-App Delete Confirmation Modal */}
+      {deleteModalState.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-100 mx-auto">
+              <Trash2 className="w-6 h-6" />
+            </div>
+
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-slate-900">
+                {deleteModalState.type === 'bulk'
+                  ? (isBn
+                      ? `নির্বাচিত ${toLocalizedNumber(deleteModalState.ids?.length || selectedOrderIds.length, adminLanguage)}টি অসম্পূর্ণ অর্ডার মুছবেন?`
+                      : `Delete ${deleteModalState.ids?.length || selectedOrderIds.length} selected incomplete order(s)?`)
+                  : (isBn
+                      ? `এই অসম্পূর্ণ অর্ডারটি মুছে ফেলতে চান?`
+                      : `Delete this incomplete order?`)}
+              </h3>
+              <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                {isBn
+                  ? 'এই কাজটি সম্পন্ন করলে নির্বাচিত অসম্পূর্ণ অর্ডারগুলো স্থায়ীভাবে মুছে যাবে এবং তা আর পুনরুদ্ধার করা সম্ভব হবে না।'
+                  : 'This action cannot be undone. The selected lead(s) will be permanently deleted.'}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setDeleteModalState({ isOpen: false, type: 'bulk' })}
+                disabled={isApplyingBulk}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                {isBn ? 'বাতিল' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isApplyingBulk}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition shadow-xs flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+              >
+                {isApplyingBulk ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>{isBn ? 'মুছে ফেলা হচ্ছে...' : 'Deleting...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{isBn ? 'হ্যাঁ, মুছে ফেলুন' : 'Yes, Delete'}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

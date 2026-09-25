@@ -54,6 +54,7 @@ interface DatabaseSchema {
   settings: AppSettings;
   pixelLogs: PixelEventLog[];
   users: AdminUser[];
+  deletedUserEmails?: string[];
   incompleteOrders?: IncompleteOrder[];
   isDemoDataRemoved?: boolean;
   demoClearedAt?: string;
@@ -167,12 +168,15 @@ function loadDatabase(): DatabaseSchema {
         loadedIncomplete = INITIAL_INCOMPLETE_ORDERS;
       }
 
-      let loadedUsers: AdminUser[] = Array.isArray(parsed.users) ? parsed.users : INITIAL_ADMIN_USERS;
-      if (!loadedUsers.some((u: AdminUser) => u.email?.toLowerCase().trim() === 'bmrayhan330@gmail.com')) {
-        const ownerUser = INITIAL_ADMIN_USERS.find(u => u.email === 'bmrayhan330@gmail.com');
-        if (ownerUser) {
-          loadedUsers.unshift(ownerUser);
-        }
+      const loadedDeletedEmails: string[] = Array.isArray(parsed.deletedUserEmails) ? parsed.deletedUserEmails : [];
+      const deletedEmailsSet = new Set(loadedDeletedEmails.map((e: string) => String(e).toLowerCase().trim()));
+
+      let loadedUsers: AdminUser[] = [];
+      if (Array.isArray(parsed.users) && parsed.users.length > 0) {
+        loadedUsers = parsed.users.filter((u: AdminUser) => u && u.email && !deletedEmailsSet.has(u.email.toLowerCase().trim()));
+      }
+      if (loadedUsers.length === 0) {
+        loadedUsers = INITIAL_ADMIN_USERS.filter((u: AdminUser) => u && u.email && !deletedEmailsSet.has(u.email.toLowerCase().trim()));
       }
 
       return {
@@ -181,6 +185,7 @@ function loadDatabase(): DatabaseSchema {
         settings: loadedSettings,
         pixelLogs: Array.isArray(parsed.pixelLogs) ? parsed.pixelLogs : [],
         users: loadedUsers,
+        deletedUserEmails: loadedDeletedEmails,
         incompleteOrders: loadedIncomplete,
         isDemoDataRemoved: isDemoRemoved,
         demoClearedAt: parsed.demoClearedAt || loadedSettings.demoClearedAt
@@ -200,6 +205,7 @@ function loadDatabase(): DatabaseSchema {
     },
     pixelLogs: [],
     users: INITIAL_ADMIN_USERS,
+    deletedUserEmails: [],
     incompleteOrders: isDemoRemoved ? [] : INITIAL_INCOMPLETE_ORDERS,
     isDemoDataRemoved: isDemoRemoved
   };
@@ -2875,6 +2881,55 @@ async function startServer() {
     res.json(safeUsers);
   });
 
+  // Sync locally stored admin users from client to backend database
+  app.post('/api/users/sync-local', (req: Request, res: Response) => {
+    const { localUsers } = req.body;
+    if (!Array.isArray(localUsers)) {
+      return res.status(400).json({ error: 'localUsers array required' });
+    }
+
+    if (!db.deletedUserEmails) {
+      db.deletedUserEmails = [];
+    }
+    const deletedEmailsSet = new Set(db.deletedUserEmails.map((e: string) => String(e).toLowerCase().trim()));
+
+    let addedCount = 0;
+    localUsers.forEach((lu: AdminUser) => {
+      if (!lu || !lu.email) return;
+      const normalizedEmail = String(lu.email).toLowerCase().trim();
+      // Skip previously deleted users so they are never restored by local sync
+      if (deletedEmailsSet.has(normalizedEmail)) return;
+
+      const existsIndex = db.users.findIndex(u => u.email?.toLowerCase().trim() === normalizedEmail);
+      if (existsIndex === -1) {
+        db.users.push({
+          id: lu.id || `user-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          name: lu.name ? String(lu.name).trim() : 'Admin',
+          email: normalizedEmail,
+          password: lu.password ? String(lu.password).trim() : 'admin123',
+          role: lu.role || 'admin',
+          createdAt: lu.createdAt || new Date().toISOString()
+        });
+        addedCount++;
+      } else {
+        // If local user has password and db does not, update it
+        if (lu.password && (!db.users[existsIndex].password || db.users[existsIndex].password === 'admin123')) {
+          db.users[existsIndex].password = String(lu.password).trim();
+        }
+        if (lu.name && (!db.users[existsIndex].name || db.users[existsIndex].name === 'Admin')) {
+          db.users[existsIndex].name = String(lu.name).trim();
+        }
+      }
+    });
+
+    if (addedCount > 0) {
+      saveDatabase(db);
+    }
+
+    const safeUsers = db.users.map(({ password: _p, ...u }) => u);
+    res.json({ success: true, addedCount, users: safeUsers });
+  });
+
   // Create new admin user
   app.post('/api/users', (req: Request, res: Response) => {
     const { name, email, password, role } = req.body;
@@ -2883,8 +2938,13 @@ async function startServer() {
     }
 
     const normalizedEmail = String(email).toLowerCase().trim();
-    if (db.users.some(u => u.email.toLowerCase().trim() === normalizedEmail)) {
+    if (db.users.some(u => u.email?.toLowerCase().trim() === normalizedEmail)) {
       return res.status(400).json({ error: 'এই ইমেইল দিয়ে ইতোমধ্যে একটি একাউন্ট বিদ্যমান রয়েছে' });
+    }
+
+    // If previously deleted, remove from deletedUserEmails so new creation succeeds
+    if (db.deletedUserEmails) {
+      db.deletedUserEmails = db.deletedUserEmails.filter((e: string) => String(e).toLowerCase().trim() !== normalizedEmail);
     }
 
     const newUser: AdminUser = {
@@ -2903,19 +2963,40 @@ async function startServer() {
     res.status(201).json({ success: true, user: safeUser });
   });
 
-  // Delete admin user
+  // Delete admin user (Super Admin can delete any user except last remaining admin)
   app.delete('/api/users/:id', (req: Request, res: Response) => {
     const { id } = req.params;
+    const queryEmail = ((req.query.email as string) || (req.body && req.body.email as string) || '')
+      .toLowerCase()
+      .trim();
+    const cleanId = String(id).toLowerCase().trim();
+
     if (db.users.length <= 1) {
       return res.status(400).json({ error: 'অন্তত একজন অ্যাডমিন ইউজার অবশিষ্ট থাকতে হবে।' });
     }
 
-    const initialLen = db.users.length;
-    db.users = db.users.filter(u => u.id !== id);
-
-    if (db.users.length === initialLen) {
-      return res.status(404).json({ error: 'ইউজার পাওয়া যায়নি' });
+    if (!db.deletedUserEmails) {
+      db.deletedUserEmails = [];
     }
+
+    // Find target user to capture their email for permanent blacklist
+    const targetUser = db.users.find(u => {
+      const uEmail = u.email?.toLowerCase().trim();
+      return u.id === id || u.id?.toLowerCase().trim() === cleanId || (uEmail && (uEmail === cleanId || uEmail === queryEmail));
+    });
+
+    const targetEmail = (targetUser?.email || (cleanId.includes('@') ? cleanId : queryEmail))?.toLowerCase().trim();
+    if (targetEmail && !db.deletedUserEmails.includes(targetEmail)) {
+      db.deletedUserEmails.push(targetEmail);
+    }
+
+    const initialLen = db.users.length;
+    db.users = db.users.filter(u => {
+      const uEmail = u.email?.toLowerCase().trim();
+      if (u.id === id || u.id?.toLowerCase().trim() === cleanId) return false;
+      if (uEmail && (uEmail === cleanId || (queryEmail && uEmail === queryEmail) || (targetEmail && uEmail === targetEmail))) return false;
+      return true;
+    });
 
     saveDatabase(db);
     res.json({ success: true, message: 'ইউজার সফলভাবে ডিলিট করা হয়েছে' });
@@ -3293,6 +3374,46 @@ async function startServer() {
       saveDatabase(db);
     }
     res.json({ success: true });
+  });
+
+  // Bulk action on incomplete orders (change status or delete multiple)
+  app.post('/api/incomplete-orders/bulk-action', (req: Request, res: Response) => {
+    const { ids, action, status } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ error: 'ids array required' });
+    }
+
+    if (!db.incompleteOrders) {
+      db.incompleteOrders = [];
+    }
+
+    const idSet = new Set(ids);
+
+    if (action === 'delete') {
+      const initialCount = db.incompleteOrders.length;
+      db.incompleteOrders = db.incompleteOrders.filter(inc => !idSet.has(inc.id));
+      const deletedCount = initialCount - db.incompleteOrders.length;
+      saveDatabase(db);
+      return res.json({ success: true, count: deletedCount, action: 'delete' });
+    }
+
+    if (action === 'status') {
+      if (!status) {
+        return res.status(400).json({ error: 'status required' });
+      }
+      let updatedCount = 0;
+      db.incompleteOrders.forEach(inc => {
+        if (idSet.has(inc.id)) {
+          inc.status = status;
+          inc.updatedAt = new Date().toISOString();
+          updatedCount++;
+        }
+      });
+      saveDatabase(db);
+      return res.json({ success: true, count: updatedCount, action: 'status', status });
+    }
+
+    return res.status(400).json({ error: 'Invalid action' });
   });
 
   app.post('/api/incomplete-orders/clear-all', (_req: Request, res: Response) => {

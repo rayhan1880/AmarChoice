@@ -365,10 +365,23 @@ export const api = {
     }, 'Failed to create user');
   },
 
-  async deleteUser(id: string): Promise<{ success: boolean; message?: string }> {
-    return safeFetchJson(`${API_BASE}/users/${id}`, {
+  async deleteUser(id: string, email?: string): Promise<{ success: boolean; message?: string }> {
+    const query = email ? `?email=${encodeURIComponent(email)}` : '';
+    return safeFetchJson(`${API_BASE}/users/${encodeURIComponent(id)}${query}`, {
       method: 'DELETE'
     }, 'Failed to delete user');
+  },
+
+  async syncLocalUsers(localUsers: AdminUser[]): Promise<{
+    success: boolean;
+    addedCount: number;
+    users: AdminUser[];
+  }> {
+    return safeFetchJson(`${API_BASE}/users/sync-local`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ localUsers })
+    }, 'Failed to sync local users');
   },
 
   // Fraud Control & Daily Order Limit
@@ -449,6 +462,18 @@ export const api = {
     return safeFetchJson(`${API_BASE}/incomplete-orders/${id}`, {
       method: 'DELETE'
     }, 'Failed to delete incomplete order');
+  },
+
+  async bulkActionIncompleteOrders(
+    ids: string[],
+    action: 'status' | 'delete',
+    status?: IncompleteOrder['status']
+  ): Promise<{ success: boolean; count: number; action: string; status?: string }> {
+    return safeFetchJson(`${API_BASE}/incomplete-orders/bulk-action`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids, action, status })
+    }, 'Failed to perform bulk action on incomplete orders');
   },
 
   async clearAllIncompleteOrders(): Promise<{ success: boolean; message: string }> {

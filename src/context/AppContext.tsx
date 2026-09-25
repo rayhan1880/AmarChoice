@@ -32,7 +32,7 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   createAdminUser: (userData: { name: string; email: string; password: string; role?: 'superadmin' | 'admin' | 'moderator' }) => Promise<AdminUser>;
-  deleteAdminUser: (id: string) => Promise<void>;
+  deleteAdminUser: (id: string, email?: string) => Promise<void>;
   createOrder: (orderData: Partial<Order>) => Promise<Order>;
   updateOrder: (id: string, orderData: Partial<Order>) => Promise<Order>;
   updateOrderStatus: (id: string, status: OrderStatus, notes?: string) => Promise<void>;
@@ -83,6 +83,11 @@ interface AppContextType {
   ) => Promise<void>;
   convertIncompleteToOrder: (id: string) => Promise<Order>;
   deleteIncompleteOrder: (id: string) => Promise<void>;
+  bulkActionIncompleteOrders: (
+    ids: string[],
+    action: 'status' | 'delete',
+    status?: IncompleteOrder['status']
+  ) => Promise<{ success: boolean; count: number }>;
   clearDemoData: (options?: { clearOrders?: boolean; clearIncomplete?: boolean; clearDemoPages?: boolean }) => Promise<void>;
   clearAllOrders: () => Promise<void>;
   clearAllIncompleteOrders: () => Promise<void>;
@@ -278,7 +283,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return null;
   });
 
-  const [users, setUsers] = useState<AdminUser[]>(INITIAL_ADMIN_USERS);
+  // Helper to load persisted users from localStorage
+  const getStoredUsers = (): AdminUser[] => {
+    if (typeof window === 'undefined') return INITIAL_ADMIN_USERS;
+    try {
+      const stored = localStorage.getItem('amarchoice_admin_users');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    return INITIAL_ADMIN_USERS;
+  };
+
+  const persistStoredUsers = (usersList: AdminUser[]) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem('amarchoice_admin_users', JSON.stringify(usersList));
+    } catch {
+      // ignore
+    }
+  };
+
+  const [users, setUsers] = useState<AdminUser[]>(getStoredUsers);
 
   // Admin language preference ('bn' or 'en')
   const [adminLanguage, setAdminLanguageState] = useState<AdminLanguage>(() => {
@@ -485,7 +516,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         api.getOrders().catch(() => []),
         api.getSettings().catch(() => INITIAL_SETTINGS),
         api.getPixelLogs().catch(() => []),
-        api.getUsers().catch(() => INITIAL_ADMIN_USERS),
+        api.getUsers().catch(() => []),
         api.getIncompleteOrders().catch(() => []),
         api.getFraudControl().catch(() => INITIAL_SETTINGS.fraudControl!)
       ]);
@@ -546,8 +577,65 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setOrders(combinedOrders);
       setSettings(settingsData);
       setPixelLogs(logsData);
-      setUsers(usersData);
       setIncompleteOrders(finalIncOrders);
+
+      // Merge users: Backend users + persistent local users (offline cache)
+      const localUsers = getStoredUsers();
+      const mergedUsersMap = new Map<string, AdminUser>();
+
+      let deletedEmails: string[] = [];
+      try {
+        deletedEmails = JSON.parse(localStorage.getItem('amarchoice_deleted_admin_emails') || '[]');
+      } catch {}
+      const deletedEmailsSet = new Set(deletedEmails.map(e => e.toLowerCase().trim()));
+
+      if (Array.isArray(usersData) && usersData.length > 0) {
+        // Backend users are the primary source of truth
+        usersData.forEach(u => {
+          if (u && u.email) {
+            const email = u.email.toLowerCase().trim();
+            if (!deletedEmailsSet.has(email)) {
+              mergedUsersMap.set(email, u);
+            }
+          }
+        });
+
+        // Add local offline password if existing
+        localUsers.forEach(u => {
+          if (u && u.email) {
+            const email = u.email.toLowerCase().trim();
+            if (!deletedEmailsSet.has(email)) {
+              const existing = mergedUsersMap.get(email);
+              if (existing) {
+                mergedUsersMap.set(email, { ...existing, password: u.password || existing.password });
+              }
+            }
+          }
+        });
+      } else {
+        // Fallback when backend is unreachable or completely empty
+        const fallbackList = localUsers.length > 0 ? localUsers : INITIAL_ADMIN_USERS;
+        fallbackList.forEach(u => {
+          if (u && u.email) {
+            const email = u.email.toLowerCase().trim();
+            if (!deletedEmailsSet.has(email)) {
+              mergedUsersMap.set(email, u);
+            }
+          }
+        });
+      }
+
+      const finalUsers = Array.from(mergedUsersMap.values()).filter(u => {
+        const email = u.email?.toLowerCase().trim();
+        return email && !deletedEmailsSet.has(email);
+      });
+      setUsers(finalUsers);
+      persistStoredUsers(finalUsers);
+
+      // Background sync local users to server database only for non-deleted active users
+      if (finalUsers.length > 0) {
+        api.syncLocalUsers(finalUsers).catch(() => {});
+      }
       if (fraudData) {
         setFraudControl(fraudData);
       } else if (settingsData.fraudControl) {
@@ -630,8 +718,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    const normalizedEmail = email.toLowerCase().trim();
+    const cleanPassword = password.trim();
+
     try {
-      const res = await api.login(email, password);
+      const res = await api.login(normalizedEmail, cleanPassword);
       if (res && res.user) {
         setCurrentUser(res.user);
         try {
@@ -642,10 +733,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
         return true;
       }
     } catch (err) {
-      // Fallback check against local initial/state users if network or server restarted
-      const normalizedEmail = email.toLowerCase().trim();
-      const localFound = users.find(
-        u => u.email.toLowerCase().trim() === normalizedEmail && (u.password === password.trim() || (!u.password && password.trim() === 'admin123'))
+      // Fallback check against local/stored users if server is offline or static deploy
+      const currentUsersList = users.length > 0 ? users : getStoredUsers();
+      const localFound = currentUsersList.find(
+        u => u.email?.toLowerCase().trim() === normalizedEmail && (u.password === cleanPassword || (!u.password && cleanPassword === 'admin123'))
       );
       if (localFound) {
         const { password: _p, ...safe } = localFound;
@@ -672,32 +763,97 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const createAdminUser = async (userData: { name: string; email: string; password: string; role?: 'superadmin' | 'admin' | 'moderator' }): Promise<AdminUser> => {
-    try {
-      const res = await api.createUser(userData);
-      setUsers(prev => [...prev, res.user]);
-      return res.user;
-    } catch (err) {
-      // Fallback local creation
-      const localUser: AdminUser = {
-        id: `user-${Date.now()}`,
-        name: userData.name,
-        email: userData.email.toLowerCase().trim(),
-        password: userData.password,
-        role: userData.role || 'admin',
-        createdAt: new Date().toISOString()
-      };
-      setUsers(prev => [...prev, localUser]);
-      return localUser;
+    const cleanName = userData.name.trim();
+    const normalizedEmail = userData.email.toLowerCase().trim();
+    const cleanPassword = userData.password.trim();
+    const role = userData.role || 'admin';
+
+    // Duplicate check in existing users
+    const currentList = users.length > 0 ? users : getStoredUsers();
+    if (currentList.some(u => u.email?.toLowerCase().trim() === normalizedEmail)) {
+      throw new Error('এই ইমেইল দিয়ে ইতোমধ্যে একটি একাউন্ট বিদ্যমান রয়েছে');
     }
+
+    const localUser: AdminUser = {
+      id: `user-${Date.now()}`,
+      name: cleanName,
+      email: normalizedEmail,
+      password: cleanPassword,
+      role,
+      createdAt: new Date().toISOString()
+    };
+
+    let userToSave = localUser;
+
+    try {
+      const res = await api.createUser({
+        name: cleanName,
+        email: normalizedEmail,
+        password: cleanPassword,
+        role
+      });
+      if (res && res.user) {
+        userToSave = { ...localUser, ...res.user, password: cleanPassword };
+      }
+    } catch (err: any) {
+      console.warn('Backend user creation error or offline, saving to local persistent storage:', err);
+      const msg = err?.message || String(err);
+      if (msg.includes('ইতোমধ্যে একটি একাউন্ট') || msg.includes('বিদ্যমান') || msg.includes('already exists') || msg.includes('আবশ্যক')) {
+        throw new Error(msg);
+      }
+    }
+
+    // Remove email from deleted emails list if previously deleted
+    try {
+      const deletedEmails: string[] = JSON.parse(localStorage.getItem('amarchoice_deleted_admin_emails') || '[]');
+      const filtered = deletedEmails.filter(e => e.toLowerCase().trim() !== normalizedEmail);
+      localStorage.setItem('amarchoice_deleted_admin_emails', JSON.stringify(filtered));
+    } catch {}
+
+    setUsers(prev => {
+      const updated = [...prev.filter(u => u.email?.toLowerCase().trim() !== normalizedEmail), userToSave];
+      persistStoredUsers(updated);
+      return updated;
+    });
+
+    // Background sync to backend
+    api.syncLocalUsers([userToSave]).catch(() => {});
+
+    return userToSave;
   };
 
-  const deleteAdminUser = async (id: string): Promise<void> => {
+  const deleteAdminUser = async (id: string, userEmail?: string): Promise<void> => {
+    const cleanId = id.toLowerCase().trim();
+    const targetUser = users.find(u => u.id === id || u.id?.toLowerCase().trim() === cleanId || (u.email && u.email.toLowerCase().trim() === cleanId));
+    const targetEmail = (userEmail || targetUser?.email || (cleanId.includes('@') ? cleanId : ''))?.toLowerCase().trim();
+
     try {
-      await api.deleteUser(id);
-    } catch {
-      // Fallback
+      await api.deleteUser(id, targetEmail);
+    } catch (err) {
+      console.warn('Backend delete failed, deleting locally:', err);
     }
-    setUsers(prev => prev.filter(u => u.id !== id));
+
+    if (targetEmail) {
+      try {
+        const deletedEmails: string[] = JSON.parse(localStorage.getItem('amarchoice_deleted_admin_emails') || '[]');
+        if (!deletedEmails.includes(targetEmail)) {
+          deletedEmails.push(targetEmail);
+          localStorage.setItem('amarchoice_deleted_admin_emails', JSON.stringify(deletedEmails));
+        }
+      } catch {}
+    }
+
+    setUsers(prev => {
+      const updated = prev.filter(u => {
+        const uId = u.id?.toLowerCase().trim();
+        const uEmail = u.email?.toLowerCase().trim();
+        if (u.id === id || uId === cleanId) return false;
+        if (uEmail && (uEmail === cleanId || (targetEmail && uEmail === targetEmail))) return false;
+        return true;
+      });
+      persistStoredUsers(updated);
+      return updated;
+    });
   };
 
   const setActiveLandingPage = (page: LandingPage, updateUrl = true) => {
@@ -1425,6 +1581,43 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const bulkActionIncompleteOrders = async (
+    ids: string[],
+    action: 'status' | 'delete',
+    status?: IncompleteOrder['status']
+  ): Promise<{ success: boolean; count: number }> => {
+    const idSet = new Set(ids);
+    try {
+      const res = await api.bulkActionIncompleteOrders(ids, action, status);
+      if (action === 'delete') {
+        setIncompleteOrders(prev => prev.filter(item => !idSet.has(item.id)));
+      } else if (action === 'status' && status) {
+        setIncompleteOrders(prev =>
+          prev.map(item =>
+            idSet.has(item.id)
+              ? { ...item, status, updatedAt: new Date().toISOString() }
+              : item
+          )
+        );
+      }
+      return { success: true, count: res.count || ids.length };
+    } catch (err) {
+      console.warn('Backend bulkActionIncompleteOrders failed, falling back locally:', err);
+      if (action === 'delete') {
+        setIncompleteOrders(prev => prev.filter(item => !idSet.has(item.id)));
+      } else if (action === 'status' && status) {
+        setIncompleteOrders(prev =>
+          prev.map(item =>
+            idSet.has(item.id)
+              ? { ...item, status, updatedAt: new Date().toISOString() }
+              : item
+          )
+        );
+      }
+      return { success: true, count: ids.length };
+    }
+  };
+
   const clearDemoData = async (options?: {
     clearOrders?: boolean;
     clearIncomplete?: boolean;
@@ -1543,6 +1736,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         updateIncompleteOrder,
         convertIncompleteToOrder,
         deleteIncompleteOrder,
+        bulkActionIncompleteOrders,
         clearDemoData,
         clearAllOrders,
         clearAllIncompleteOrders

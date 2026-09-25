@@ -28,10 +28,16 @@ export default function UsersView() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // In-app delete confirmation state (works in all iframes and devices without window.confirm)
+  const [deleteTargetUser, setDeleteTargetUser] = useState<AdminUser | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
   const handleCreateUser = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
+    setActionError(null);
 
     if (!name.trim() || !email.trim() || !password.trim()) {
       setError('অনুগ্রহ করে নাম, ইমেইল এবং পাসওয়ার্ড পূরণ করুন');
@@ -73,26 +79,45 @@ export default function UsersView() {
     }
   };
 
-  const handleDelete = async (user: AdminUser) => {
-    if (user.id === currentUser?.id) {
-      alert('আপনি আপনার নিজের অ্যাকাউন্ট ডিলিট করতে পারবেন না!');
-      return;
-    }
-    if (users.length <= 1) {
-      alert('সিস্টেমে অন্তত একজন অ্যাডমিন থাকতে হবে!');
+  const handleOpenDeleteModal = (user: AdminUser) => {
+    setActionError(null);
+    const isTargetCurrent = Boolean(
+      (currentUser?.id && user.id === currentUser.id) ||
+      (currentUser?.email && user.email && user.email.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
+    );
+
+    if (isTargetCurrent) {
+      setActionError('আপনি নিজের একাউন্ট ডিলিট করতে পারবেন না!');
       return;
     }
 
-    const confirmDelete = window.confirm(`আপনি কি নিশ্চিত যে "${user.name}" (${user.email}) ইউজারটি ডিলিট করতে চান?`);
-    if (confirmDelete) {
-      try {
-        await deleteAdminUser(user.id);
-        setSuccess(`"${user.name}" ইউজারটি ডিলিট করা হয়েছে`);
-        setTimeout(() => setSuccess(null), 4000);
-      } catch (err) {
-        alert('ইউজার ডিলিট করা সম্ভব হয়নি');
-        console.error(err);
+    if (users.length <= 1) {
+      setActionError('সিস্টেমে অন্তত একজন অ্যাডমিন থাকা আবশ্যক!');
+      return;
+    }
+
+    setDeleteTargetUser(user);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetUser) return;
+    try {
+      setDeleteLoading(true);
+      setActionError(null);
+      await deleteAdminUser(deleteTargetUser.id, deleteTargetUser.email);
+      setSuccess(`ইউজার "${deleteTargetUser.name}" (${deleteTargetUser.email}) সফলভাবে ডিলিট করা হয়েছে`);
+      setDeleteTargetUser(null);
+      setTimeout(() => {
+        setSuccess(null);
+      }, 5000);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setActionError(err.message);
+      } else {
+        setActionError('ইউজার ডিলিট করা সম্ভব হয়নি');
       }
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -161,6 +186,23 @@ export default function UsersView() {
         </div>
       )}
 
+      {/* Action Error Notification */}
+      {actionError && (
+        <div className="p-4 bg-rose-50 border border-rose-300 rounded-xl text-rose-800 text-sm flex items-start justify-between gap-3 shadow-xs animate-fadeIn">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="font-medium">{actionError}</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            className="text-rose-500 hover:text-rose-800 p-0.5 rounded cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl p-4 border border-stone-200 shadow-xs flex items-center gap-3">
@@ -224,7 +266,10 @@ export default function UsersView() {
             </thead>
             <tbody className="divide-y divide-stone-100">
               {users.map((u) => {
-                const isCurrent = u.id === currentUser?.id;
+                const isCurrent = Boolean(
+                  (currentUser?.id && u.id === currentUser.id) ||
+                  (currentUser?.email && u.email && u.email.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
+                );
                 return (
                   <tr key={u.id} className="hover:bg-stone-50/80 transition">
                     <td className="py-3.5 px-4">
@@ -262,15 +307,15 @@ export default function UsersView() {
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       {isCurrent ? (
-                        <span className="text-xs text-stone-400 italic">লগইন করা আছেন</span>
+                        <span className="text-xs text-stone-400 italic font-medium">লগইন করা আছেন</span>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleDelete(u)}
-                          className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 px-2.5 py-1.5 rounded-lg font-medium transition"
+                          onClick={() => handleOpenDeleteModal(u)}
+                          className="inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1.5 rounded-lg font-bold transition active:scale-95 shadow-2xs cursor-pointer"
                           title="ইউজার ডিলিট করুন"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3.5 h-3.5 text-rose-600" />
                           <span>মুছুন</span>
                         </button>
                       )}
@@ -285,7 +330,10 @@ export default function UsersView() {
         {/* Mobile View Cards */}
         <div className="md:hidden divide-y divide-stone-100">
           {users.map((u) => {
-            const isCurrent = u.id === currentUser?.id;
+            const isCurrent = Boolean(
+              (currentUser?.id && u.id === currentUser.id) ||
+              (currentUser?.email && u.email && u.email.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
+            );
             return (
               <div key={u.id} className="p-4 space-y-2.5 hover:bg-stone-50 transition">
                 <div className="flex items-center justify-between">
@@ -319,8 +367,8 @@ export default function UsersView() {
                   {!isCurrent && (
                     <button
                       type="button"
-                      onClick={() => handleDelete(u)}
-                      className="inline-flex items-center gap-1 text-xs text-rose-600 hover:text-rose-800 bg-rose-50 px-2 py-1 rounded-lg font-medium"
+                      onClick={() => handleOpenDeleteModal(u)}
+                      className="inline-flex items-center gap-1.5 text-xs text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3 py-1.5 rounded-lg font-bold active:scale-95 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>মুছে ফেলুন</span>
@@ -448,6 +496,85 @@ export default function UsersView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete User Confirmation Modal */}
+      {deleteTargetUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-stone-200 relative animate-scaleUp">
+            <button
+              type="button"
+              disabled={deleteLoading}
+              onClick={() => setDeleteTargetUser(null)}
+              className="absolute top-4 right-4 text-stone-400 hover:text-stone-700 p-1 rounded-lg hover:bg-stone-100 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center font-bold shrink-0">
+                <Trash2 className="w-6 h-6 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-stone-900">
+                  অ্যাডমিন ইউজার মুছে ফেলবেন?
+                </h3>
+                <p className="text-xs text-stone-500 font-medium">
+                  সুপার অ্যাডমিন একাউন্ট প্রত্যাহার কনফার্মেশন
+                </p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-stone-50 rounded-xl border border-stone-200 mb-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-stone-500">ইউজারের নাম:</span>
+                <span className="text-sm font-bold text-stone-900">{deleteTargetUser.name}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-stone-500">লগইন ইমেইল:</span>
+                <span className="text-xs font-mono font-medium text-stone-700">{deleteTargetUser.email}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-stone-500">অ্যাক্সেস রোল:</span>
+                <div>{getRoleBadge(deleteTargetUser.role)}</div>
+              </div>
+            </div>
+
+            <p className="text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-xl p-3 mb-5 font-medium leading-relaxed">
+              ⚠️ সতর্কবার্তা: আপনি কি নিশ্চিত যে <strong>"{deleteTargetUser.name}"</strong> ({deleteTargetUser.email}) ইউজারটিকে স্থায়ীভাবে ডিলিট করতে চান? ডিলিট করার পর তিনি আর <code>/mypanel</code> এ লগইন করতে পারবেন না।
+            </p>
+
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={() => setDeleteTargetUser(null)}
+                className="px-4 py-2.5 rounded-xl border border-stone-300 text-stone-700 hover:bg-stone-100 text-sm font-bold transition cursor-pointer"
+              >
+                বাতিল করুন
+              </button>
+
+              <button
+                type="button"
+                disabled={deleteLoading}
+                onClick={handleConfirmDelete}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-sm font-bold shadow-md hover:shadow-lg transition flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+              >
+                {deleteLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>মুছে ফেলা হচ্ছে...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>হ্যাঁ, মুছে ফেলুন</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

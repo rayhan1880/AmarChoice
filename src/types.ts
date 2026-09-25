@@ -298,7 +298,7 @@ export interface IncompleteOrder {
   step: 'details_entered' | 'address_entered' | 'abandoned';
   createdAt: string;
   updatedAt: string;
-  status: 'uncontacted' | 'contacted' | 'recovered' | 'discarded';
+  status: 'uncontacted' | 'contacted' | 'recovered' | 'cancelled' | 'discarded';
   notes?: string;
   customerIp?: string;
   contactLogs?: IncompleteOrderContactLog[];
