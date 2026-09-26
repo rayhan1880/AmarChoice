@@ -32,7 +32,9 @@ import {
   ShieldCheck,
   Key,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Upload,
+  X
 } from 'lucide-react';
 
 interface LandingPageEditorProps {
@@ -227,10 +229,20 @@ export default function LandingPageEditor({ page, onBack, onSaved }: LandingPage
     setProducts([...products, newVariant]);
   };
 
-  const handleUpdateVariant = (idx: number, field: keyof ProductVariant, value: unknown) => {
-    const updated = [...products];
-    updated[idx] = { ...updated[idx], [field]: value };
-    setProducts(updated);
+  const handleUpdateVariant = (
+    idx: number,
+    fieldOrUpdates: keyof ProductVariant | Partial<ProductVariant>,
+    value?: unknown
+  ) => {
+    setProducts(prev => {
+      const updated = [...prev];
+      if (typeof fieldOrUpdates === 'string') {
+        updated[idx] = { ...updated[idx], [fieldOrUpdates]: value };
+      } else if (typeof fieldOrUpdates === 'object' && fieldOrUpdates !== null) {
+        updated[idx] = { ...updated[idx], ...fieldOrUpdates };
+      }
+      return updated;
+    });
   };
 
   const handleRemoveVariant = (idx: number) => {
@@ -238,7 +250,7 @@ export default function LandingPageEditor({ page, onBack, onSaved }: LandingPage
       alert('কমপক্ষে একটি পণ্য বা ভ্যারিয়েন্ট থাকতে হবে।');
       return;
     }
-    setProducts(products.filter((_, i) => i !== idx));
+    setProducts(prev => prev.filter((_, i) => i !== idx));
   };
 
   // Helper to get all custom variant fields for a product, falling back to legacy sizes & longSizes
@@ -1126,39 +1138,141 @@ function doPost(e) {
                     />
                   </div>
 
-                  {/* Image URL */}
-                  <div className="sm:col-span-3">
-                    <label className="block font-bold text-stone-700 mb-1">পণ্য প্রধান ছবির URL (Primary Image URL):</label>
-                    <input
-                      type="url"
-                      value={prod.image}
-                      onChange={e => {
-                        const newUrl = e.target.value;
-                        const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image];
-                        if (currentImages.length > 0) {
-                          currentImages[0] = newUrl;
-                        } else {
-                          currentImages.push(newUrl);
-                        }
-                        handleUpdateVariant(idx, 'image', newUrl);
-                        handleUpdateVariant(idx, 'images', currentImages);
-                      }}
-                      placeholder="https://images.unsplash.com/..."
-                      className="w-full px-3 py-1.5 border border-stone-300 rounded-lg bg-white font-mono text-[11px]"
-                    />
+                  {/* Image URL & File Upload */}
+                  <div className="sm:col-span-3 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="block font-bold text-stone-700 text-xs">
+                        পণ্য প্রধান ছবির URL (Primary Image URL):
+                      </label>
+                      {prod.image && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentImages = prod.images && prod.images.length > 1 ? prod.images.slice(1) : [];
+                            handleUpdateVariant(idx, {
+                              image: currentImages[0] || '',
+                              images: currentImages
+                            });
+                          }}
+                          className="text-[11px] text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                          <span>ডেমো লিংক সরান</span>
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        value={prod.image || ''}
+                        onChange={e => {
+                          const newUrl = e.target.value;
+                          const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [];
+                          if (currentImages.length > 0) {
+                            currentImages[0] = newUrl;
+                          } else if (newUrl) {
+                            currentImages.push(newUrl);
+                          }
+                          handleUpdateVariant(idx, {
+                            image: newUrl,
+                            images: currentImages
+                          });
+                        }}
+                        placeholder="ছবির সরাসরি লিংক পেস্ট করুন (যেমন: https://...)"
+                        className="w-full px-3 py-2 pr-20 border border-stone-300 rounded-lg bg-white font-mono text-[11px] focus:ring-2 focus:ring-rose-500 focus:border-rose-500"
+                      />
+                      {prod.image && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const currentImages = prod.images && prod.images.length > 1 ? prod.images.slice(1) : [];
+                            handleUpdateVariant(idx, {
+                              image: currentImages[0] || '',
+                              images: currentImages
+                            });
+                          }}
+                          className="absolute right-1.5 px-2 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded text-[10px] font-bold transition flex items-center gap-0.5 cursor-pointer"
+                          title="লিংক মুছে ফেলুন"
+                        >
+                          <X className="w-3 h-3" />
+                          <span>ক্লিয়ার</span>
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Direct Upload helper */}
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <label className="inline-flex items-center gap-1 text-[11px] text-stone-700 bg-stone-100 hover:bg-stone-200 border border-stone-300 px-2.5 py-1 rounded-md font-semibold cursor-pointer transition">
+                        <Upload className="w-3 h-3 text-stone-600" />
+                        <span>ডিভাইস / গ্যালারি থেকে ছবি আপলোড</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = ev => {
+                                const dataUrl = ev.target?.result as string;
+                                if (dataUrl) {
+                                  const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [];
+                                  if (currentImages.length > 0) {
+                                    currentImages[0] = dataUrl;
+                                  } else {
+                                    currentImages.push(dataUrl);
+                                  }
+                                  handleUpdateVariant(idx, {
+                                    image: dataUrl,
+                                    images: currentImages
+                                  });
+                                }
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                            e.target.value = '';
+                          }}
+                        />
+                      </label>
+                      <span className="text-[10px] text-stone-400">
+                        (লিংক পেস্ট করুন অথবা সরাসরি ছবি সিলেক্ট করুন)
+                      </span>
+                    </div>
                   </div>
 
                   {/* Image Preview */}
                   <div className="flex items-center gap-2">
-                    <img
-                      src={prod.image}
-                      alt={prod.name}
-                      className="w-12 h-12 object-cover rounded-lg border border-stone-300"
-                      onError={e => {
-                        (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&q=80';
-                      }}
-                    />
-                    <span className="text-[10px] text-stone-500">প্রধান ছবি</span>
+                    <div className="relative group w-12 h-12 rounded-lg border border-stone-300 overflow-hidden bg-stone-100 flex items-center justify-center shrink-0">
+                      {prod.image ? (
+                        <>
+                          <img
+                            src={prod.image}
+                            alt={prod.name}
+                            className="w-full h-full object-cover"
+                            onError={e => {
+                              (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=200&q=80';
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentImages = prod.images && prod.images.length > 1 ? prod.images.slice(1) : [];
+                              handleUpdateVariant(idx, {
+                                image: currentImages[0] || '',
+                                images: currentImages
+                              });
+                            }}
+                            className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer"
+                            title="ছবি মুছুন"
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-white" />
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-[9px] text-stone-400 text-center font-bold">ছবি নেই</span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-stone-500 font-medium">প্রধান ছবি</span>
                   </div>
 
                   {/* Multiple Product Images / Slider Gallery Manager */}
@@ -1197,12 +1311,14 @@ function doPost(e) {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image];
+                                  const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image].filter(Boolean);
                                   const reordered = [imgUrl, ...currentImages.filter(url => url !== imgUrl)];
-                                  handleUpdateVariant(idx, 'image', imgUrl);
-                                  handleUpdateVariant(idx, 'images', reordered);
+                                  handleUpdateVariant(idx, {
+                                    image: imgUrl,
+                                    images: reordered
+                                  });
                                 }}
-                                className="absolute bottom-0.5 left-0.5 bg-stone-900/90 hover:bg-stone-900 text-white text-[7px] font-bold px-1 py-0.5 rounded-sm opacity-90 sm:opacity-0 group-hover:opacity-100 transition shadow-xs"
+                                className="absolute bottom-0.5 left-0.5 bg-stone-900/90 hover:bg-stone-900 text-white text-[7px] font-bold px-1 py-0.5 rounded-sm opacity-90 sm:opacity-0 group-hover:opacity-100 transition shadow-xs cursor-pointer"
                                 title="প্রধান ছবি বানান"
                               >
                                 প্রধান
@@ -1211,17 +1327,15 @@ function doPost(e) {
                             <button
                               type="button"
                               onClick={() => {
-                                const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image];
+                                const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image].filter(Boolean);
                                 const filtered = currentImages.filter((_, i) => i !== imgIdx);
-                                if (filtered.length === 0) {
-                                  alert('কমপক্ষে একটি ছবি থাকতে হবে!');
-                                  return;
-                                }
-                                const newMain = isMain ? filtered[0] : prod.image;
-                                handleUpdateVariant(idx, 'image', newMain);
-                                handleUpdateVariant(idx, 'images', filtered);
+                                const newMain = isMain ? (filtered[0] || '') : prod.image;
+                                handleUpdateVariant(idx, {
+                                  image: newMain,
+                                  images: filtered
+                                });
                               }}
-                              className="absolute top-0.5 right-0.5 bg-rose-600/90 hover:bg-rose-700 text-white p-0.5 rounded-full opacity-90 sm:opacity-0 group-hover:opacity-100 transition shadow-xs"
+                              className="absolute top-0.5 right-0.5 bg-rose-600/90 hover:bg-rose-700 text-white p-0.5 rounded-full opacity-90 sm:opacity-0 group-hover:opacity-100 transition shadow-xs cursor-pointer"
                               title="ছবি মুছে ফেলুন"
                             >
                               <Trash2 className="w-2.5 h-2.5" />
@@ -1246,7 +1360,11 @@ function doPost(e) {
                                 const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image].filter(Boolean);
                                 if (!currentImages.includes(val)) {
                                   const updated = [...currentImages, val];
-                                  handleUpdateVariant(idx, 'images', updated);
+                                  const newMain = !prod.image ? val : prod.image;
+                                  handleUpdateVariant(idx, {
+                                    image: newMain,
+                                    images: updated
+                                  });
                                 }
                                 input.value = '';
                               }
@@ -1262,16 +1380,50 @@ function doPost(e) {
                               const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image].filter(Boolean);
                               if (!currentImages.includes(val)) {
                                 const updated = [...currentImages, val];
-                                handleUpdateVariant(idx, 'images', updated);
+                                const newMain = !prod.image ? val : prod.image;
+                                handleUpdateVariant(idx, {
+                                  image: newMain,
+                                  images: updated
+                                });
                               }
                               input.value = '';
                             }
                           }}
-                          className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-1 shadow-xs"
+                          className="px-2.5 py-1 bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold rounded-lg transition shrink-0 flex items-center gap-1 shadow-xs cursor-pointer"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>+ ছবি যোগ</span>
                         </button>
+
+                        {/* Upload slide from device */}
+                        <label className="p-1.5 bg-teal-100 hover:bg-teal-200 text-teal-800 rounded-lg transition shrink-0 flex items-center justify-center cursor-pointer border border-teal-300 shadow-xs" title="ডিভাইস থেকে স্লাইড ছবি আপলোড">
+                          <Upload className="w-3.5 h-3.5" />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={e => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                const reader = new FileReader();
+                                reader.onload = ev => {
+                                  const dataUrl = ev.target?.result as string;
+                                  if (dataUrl) {
+                                    const currentImages = prod.images && prod.images.length > 0 ? [...prod.images] : [prod.image].filter(Boolean);
+                                    const updated = [...currentImages, dataUrl];
+                                    const newMain = !prod.image ? dataUrl : prod.image;
+                                    handleUpdateVariant(idx, {
+                                      image: newMain,
+                                      images: updated
+                                    });
+                                  }
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
                       </div>
                     </div>
                     <p className="text-[10px] text-teal-800/80">
@@ -2219,9 +2371,21 @@ function doPost(e) {
                 গ্যালারি ছবি সমূহ (Gallery Images)
               </h3>
             </div>
-            <span className="text-[11px] text-stone-500 bg-stone-100 px-2.5 py-0.5 rounded-full font-semibold">
-              {galleryImages.length} টি ছবি
-            </span>
+            <div className="flex items-center gap-2">
+              {galleryImages.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setGalleryImages([])}
+                  className="text-[11px] text-rose-600 hover:text-rose-800 font-bold flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>সব ডেমো ছবি মুছুন</span>
+                </button>
+              )}
+              <span className="text-[11px] text-stone-500 bg-stone-100 px-2.5 py-0.5 rounded-full font-semibold">
+                {galleryImages.length} টি ছবি
+              </span>
+            </div>
           </div>
 
           <p className="text-[11px] text-stone-500 bg-stone-50 p-2.5 rounded-xl border border-stone-200">
@@ -2255,10 +2419,33 @@ function doPost(e) {
               <button
                 type="button"
                 onClick={handleAddGalleryImage}
-                className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-xl font-bold text-xs"
+                className="px-4 py-2 bg-stone-800 hover:bg-stone-900 text-white rounded-xl font-bold text-xs cursor-pointer shadow-xs"
               >
                 ছবি যোগ করুন
               </button>
+              <label className="px-3.5 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 text-stone-700 rounded-xl font-bold text-xs flex items-center gap-1.5 cursor-pointer transition shadow-xs">
+                <Upload className="w-3.5 h-3.5 text-stone-600" />
+                <span>ডিভাইস থেকে আপলোড</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = ev => {
+                        const dataUrl = ev.target?.result as string;
+                        if (dataUrl) {
+                          setGalleryImages(prev => [...prev, dataUrl]);
+                        }
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
             </div>
           </div>
         </div>
