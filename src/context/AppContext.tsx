@@ -299,7 +299,17 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [currentUser, setCurrentUser] = useState<AdminUser | null>(() => {
     try {
       const stored = localStorage.getItem('amarchoice_admin_user');
-      if (stored) return JSON.parse(stored);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed?.email && (
+          parsed.email.toLowerCase().trim() === 'admin@amarchoice.com' ||
+          parsed.email.toLowerCase().trim() === 'manager@amarchoice.com'
+        )) {
+          localStorage.removeItem('amarchoice_admin_user');
+          return null;
+        }
+        return parsed;
+      }
     } catch {
       // ignore
     }
@@ -619,14 +629,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       try {
         deletedEmails = JSON.parse(localStorage.getItem('amarchoice_deleted_admin_emails') || '[]');
       } catch {}
+
+      // Clean owner emails from deleted list so owner is never blocked
+      deletedEmails = deletedEmails.filter(e => {
+        const lower = String(e).toLowerCase().trim();
+        return lower !== 'bmrayhan330@gmail.com' && lower !== 'bmrayhan877@gmail.com';
+      });
+      try {
+        localStorage.setItem('amarchoice_deleted_admin_emails', JSON.stringify(deletedEmails));
+      } catch {}
+
+      const bannedDemoEmails = new Set(['admin@amarchoice.com', 'manager@amarchoice.com']);
       const deletedEmailsSet = new Set(deletedEmails.map(e => e.toLowerCase().trim()));
 
       if (Array.isArray(usersData) && usersData.length > 0) {
-        // Backend users are the primary source of truth
+        // Backend users are the primary source of truth!
         usersData.forEach(u => {
           if (u && u.email) {
             const email = u.email.toLowerCase().trim();
-            if (!deletedEmailsSet.has(email)) {
+            if (!bannedDemoEmails.has(email)) {
               mergedUsersMap.set(email, u);
             }
           }
@@ -636,7 +657,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         localUsers.forEach(u => {
           if (u && u.email) {
             const email = u.email.toLowerCase().trim();
-            if (!deletedEmailsSet.has(email)) {
+            if (!bannedDemoEmails.has(email)) {
               const existing = mergedUsersMap.get(email);
               if (existing) {
                 mergedUsersMap.set(email, { ...existing, password: u.password || existing.password });
@@ -650,16 +671,33 @@ export function AppProvider({ children }: { children: ReactNode }) {
         fallbackList.forEach(u => {
           if (u && u.email) {
             const email = u.email.toLowerCase().trim();
-            if (!deletedEmailsSet.has(email)) {
+            if (!bannedDemoEmails.has(email) && !deletedEmailsSet.has(email)) {
               mergedUsersMap.set(email, u);
             }
           }
         });
       }
 
+      // Always guarantee the logged-in currentUser is present in users list
+      if (currentUser && currentUser.email) {
+        const curEmail = currentUser.email.toLowerCase().trim();
+        if (!bannedDemoEmails.has(curEmail) && !mergedUsersMap.has(curEmail)) {
+          mergedUsersMap.set(curEmail, currentUser);
+        }
+      }
+
+      // Guarantee owner account is never lost
+      if (mergedUsersMap.size === 0) {
+        INITIAL_ADMIN_USERS.forEach(u => {
+          if (u && u.email) {
+            mergedUsersMap.set(u.email.toLowerCase().trim(), u);
+          }
+        });
+      }
+
       const finalUsers = Array.from(mergedUsersMap.values()).filter(u => {
         const email = u.email?.toLowerCase().trim();
-        return email && !deletedEmailsSet.has(email);
+        return email && !bannedDemoEmails.has(email);
       });
       setUsers(finalUsers);
       persistStoredUsers(finalUsers);

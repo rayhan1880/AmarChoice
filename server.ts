@@ -2880,8 +2880,18 @@ async function startServer() {
       return res.status(400).json({ error: 'ইমেইল এবং পাসওয়ার্ড প্রদান করুন' });
     }
 
+    const normalizedEmail = String(email).toLowerCase().trim();
+    if (normalizedEmail === 'admin@amarchoice.com' || normalizedEmail === 'manager@amarchoice.com') {
+      return res.status(401).json({ error: 'এই অ্যাকাউন্টটি স্থায়ীভাবে মুছে ফেলা হয়েছে।' });
+    }
+
+    const isDeleted = db.deletedUserEmails && db.deletedUserEmails.some((e: string) => String(e).toLowerCase().trim() === normalizedEmail);
+    if (isDeleted) {
+      return res.status(401).json({ error: 'এই অ্যাকাউন্টটি মুছে ফেলা হয়েছে।' });
+    }
+
     const foundUser = db.users.find(
-      u => u.email.toLowerCase().trim() === String(email).toLowerCase().trim() &&
+      u => u.email.toLowerCase().trim() === normalizedEmail &&
            u.password === String(password).trim()
     );
 
@@ -2920,6 +2930,7 @@ async function startServer() {
     localUsers.forEach((lu: AdminUser) => {
       if (!lu || !lu.email) return;
       const normalizedEmail = String(lu.email).toLowerCase().trim();
+      if (normalizedEmail === 'admin@amarchoice.com' || normalizedEmail === 'manager@amarchoice.com') return;
       // Skip previously deleted users so they are never restored by local sync
       if (deletedEmailsSet.has(normalizedEmail)) return;
 
@@ -2961,6 +2972,9 @@ async function startServer() {
     }
 
     const normalizedEmail = String(email).toLowerCase().trim();
+    if (normalizedEmail === 'admin@amarchoice.com' || normalizedEmail === 'manager@amarchoice.com') {
+      return res.status(400).json({ error: 'এই ইমেইল দিয়ে অ্যাকাউন্ট তৈরি করা যাবে না।' });
+    }
     if (db.users.some(u => u.email?.toLowerCase().trim() === normalizedEmail)) {
       return res.status(400).json({ error: 'এই ইমেইল দিয়ে ইতোমধ্যে একটি একাউন্ট বিদ্যমান রয়েছে' });
     }

@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { AdminUser } from '../../types.ts';
 import { 
@@ -14,11 +14,12 @@ import {
   AlertCircle, 
   Key,
   X,
-  Sparkles
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 
 export default function UsersView() {
-  const { users, currentUser, createAdminUser, deleteAdminUser } = useApp();
+  const { users, currentUser, createAdminUser, deleteAdminUser, refreshAll } = useApp();
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -27,11 +28,31 @@ export default function UsersView() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Automatically refresh users from server on mount
+  useEffect(() => {
+    refreshAll();
+  }, [refreshAll]);
+
+  // Ensure active currentUser is never missing from the users list
+  const displayUsers = (users && users.length > 0)
+    ? users
+    : (currentUser ? [currentUser] : []);
 
   // In-app delete confirmation state (works in all iframes and devices without window.confirm)
   const [deleteTargetUser, setDeleteTargetUser] = useState<AdminUser | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const handleManualRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await refreshAll();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleCreateUser = async (e: FormEvent) => {
     e.preventDefault();
@@ -91,7 +112,7 @@ export default function UsersView() {
       return;
     }
 
-    if (users.length <= 1) {
+    if (displayUsers.length <= 1) {
       setActionError('সিস্টেমে অন্তত একজন অ্যাডমিন থাকা আবশ্যক!');
       return;
     }
@@ -210,7 +231,7 @@ export default function UsersView() {
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-2xl font-black text-stone-900">{users.length}</div>
+            <div className="text-2xl font-black text-stone-900">{displayUsers.length}</div>
             <div className="text-xs text-stone-500 font-medium">মোট অ্যাডমিন ইউজার</div>
           </div>
         </div>
@@ -221,7 +242,7 @@ export default function UsersView() {
           </div>
           <div>
             <div className="text-2xl font-black text-amber-700">
-              {users.filter(u => u.role === 'superadmin').length}
+              {displayUsers.filter(u => u.role === 'superadmin').length}
             </div>
             <div className="text-xs text-stone-500 font-medium">সুপার অ্যাডমিন</div>
           </div>
@@ -233,7 +254,7 @@ export default function UsersView() {
           </div>
           <div>
             <div className="text-2xl font-black text-rose-700">
-              {users.filter(u => u.role !== 'superadmin').length}
+              {displayUsers.filter(u => u.role !== 'superadmin').length}
             </div>
             <div className="text-xs text-stone-500 font-medium">ম্যানেজার ও মডারেটর</div>
           </div>
@@ -247,9 +268,20 @@ export default function UsersView() {
             <Key className="w-4 h-4 text-stone-500" />
             অনুমোদিত অ্যাডমিন ইউজারদের তালিকা
           </h3>
-          <span className="text-xs text-stone-500 bg-stone-100 px-2 py-1 rounded-md font-mono">
-            {users.length} জন সক্রিয়
-          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              className="p-1.5 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg transition cursor-pointer"
+              title="ইউজার তালিকা রিফ্রেশ করুন"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <span className="text-xs text-stone-500 bg-stone-100 px-2.5 py-1 rounded-md font-mono font-bold">
+              {displayUsers.length} জন সক্রিয়
+            </span>
+          </div>
         </div>
 
         {/* Desktop View */}
@@ -265,7 +297,7 @@ export default function UsersView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {users.map((u) => {
+              {displayUsers.map((u) => {
                 const isCurrent = Boolean(
                   (currentUser?.id && u.id === currentUser.id) ||
                   (currentUser?.email && u.email && u.email.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
@@ -329,7 +361,7 @@ export default function UsersView() {
 
         {/* Mobile View Cards */}
         <div className="md:hidden divide-y divide-stone-100">
-          {users.map((u) => {
+          {displayUsers.map((u) => {
             const isCurrent = Boolean(
               (currentUser?.id && u.id === currentUser.id) ||
               (currentUser?.email && u.email && u.email.toLowerCase().trim() === currentUser.email.toLowerCase().trim())
