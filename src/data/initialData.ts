@@ -700,26 +700,10 @@ export const INITIAL_INCOMPLETE_ORDERS: IncompleteOrder[] = [
 export const INITIAL_ADMIN_USERS: AdminUser[] = [
   {
     id: 'user-admin-owner',
-    name: 'মালিক (Owner)',
+    name: 'Rayhan (Owner)',
     email: 'bmrayhan330@gmail.com',
-    password: 'admin123',
+    password: 'Rayhan@1122#',
     role: 'superadmin',
     createdAt: '2026-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'user-admin-1',
-    name: 'মালিক / সুপার অ্যাডমিন',
-    email: 'admin@amarchoice.com',
-    password: 'admin123',
-    role: 'superadmin',
-    createdAt: '2026-01-01T00:00:00.000Z'
-  },
-  {
-    id: 'user-admin-2',
-    name: 'অর্ডার ম্যানেজার',
-    email: 'manager@amarchoice.com',
-    password: 'manager123',
-    role: 'admin',
-    createdAt: '2026-02-15T00:00:00.000Z'
   }
 ];

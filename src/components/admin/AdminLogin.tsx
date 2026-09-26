@@ -1,4 +1,4 @@
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useApp } from '../../context/AppContext.tsx';
 import { Lock, Mail, Eye, EyeOff, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 
@@ -9,6 +9,33 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Clean up any stale demo admin credentials from browser cache
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const stored = localStorage.getItem('amarchoice_admin_users');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            const filtered = parsed.filter((u: any) =>
+              u && u.email &&
+              u.email.toLowerCase().trim() !== 'admin@amarchoice.com' &&
+              u.email.toLowerCase().trim() !== 'manager@amarchoice.com'
+            );
+            localStorage.setItem('amarchoice_admin_users', JSON.stringify(filtered));
+          }
+        }
+        const deleted = JSON.parse(localStorage.getItem('amarchoice_deleted_admin_emails') || '[]');
+        const deletedSet = new Set(deleted.map((e: string) => String(e).toLowerCase().trim()));
+        deletedSet.add('admin@amarchoice.com');
+        deletedSet.add('manager@amarchoice.com');
+        localStorage.setItem('amarchoice_deleted_admin_emails', JSON.stringify(Array.from(deletedSet)));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -85,8 +112,9 @@ export default function AdminLogin() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="আপনার ইমেইল অ্যাড্রেস লিখুন"
+                  placeholder="আপনার অনুমোদিত ইমেইল (যেমন: bmrayhan330@gmail.com)"
                   required
+                  autoComplete="username"
                   className="w-full bg-stone-900/80 border border-stone-700 focus:border-rose-500 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-stone-500 focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 transition"
                 />
               </div>
@@ -104,6 +132,7 @@ export default function AdminLogin() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  autoComplete="current-password"
                   className="w-full bg-stone-900/80 border border-stone-700 focus:border-rose-500 rounded-xl pl-10 pr-10 py-2.5 text-sm text-white placeholder-stone-500 focus:outline-hidden focus:ring-2 focus:ring-rose-500/20 transition"
                 />
                 <button

@@ -310,11 +310,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const getStoredUsers = (): AdminUser[] => {
     if (typeof window === 'undefined') return INITIAL_ADMIN_USERS;
     try {
+      let deletedEmails: string[] = [];
+      try {
+        deletedEmails = JSON.parse(localStorage.getItem('amarchoice_deleted_admin_emails') || '[]');
+      } catch {}
+      const deletedSet = new Set(deletedEmails.map(e => String(e).toLowerCase().trim()));
+      deletedSet.add('admin@amarchoice.com');
+      deletedSet.add('manager@amarchoice.com');
+
       const stored = localStorage.getItem('amarchoice_admin_users');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          const filtered = parsed.filter(u => u && u.email && !deletedSet.has(u.email.toLowerCase().trim()));
+          if (filtered.length > 0) return filtered;
         }
       }
     } catch {
@@ -755,12 +764,36 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         return true;
       }
-    } catch (err) {
-      // Fallback check against local/stored users if server is offline or static deploy
+    } catch (err: any) {
+      // If the backend server responded with an error (such as 401 Wrong Password / User Not Found),
+      // we MUST NEVER allow any local fallback bypass! Always throw the server error immediately.
+      const errMsg = String(err?.message || '');
+      const isServerOffline = errMsg.includes('API_SERVER_UNAVAILABLE') || errMsg.includes('Failed to fetch') || errMsg.includes('NetworkError');
+
+      if (!isServerOffline) {
+        throw err;
+      }
+
+      // Emergency offline fallback (ONLY when backend server is completely unreachable / static deploy)
+      let deletedEmails: string[] = [];
+      try {
+        deletedEmails = JSON.parse(localStorage.getItem('amarchoice_deleted_admin_emails') || '[]');
+      } catch {}
+      const deletedEmailsSet = new Set(deletedEmails.map(e => e.toLowerCase().trim()));
+      deletedEmailsSet.add('admin@amarchoice.com');
+      deletedEmailsSet.add('manager@amarchoice.com');
+
+      if (deletedEmailsSet.has(normalizedEmail)) {
+        throw new Error('ভুল ইমেইল অথবা পাসওয়ার্ড! অনুগ্রহ করে আবার চেষ্টা করুন।');
+      }
+
       const currentUsersList = users.length > 0 ? users : getStoredUsers();
       const localFound = currentUsersList.find(
-        u => u.email?.toLowerCase().trim() === normalizedEmail && (u.password === cleanPassword || (!u.password && cleanPassword === 'admin123'))
+        u => u.email?.toLowerCase().trim() === normalizedEmail &&
+             !deletedEmailsSet.has(u.email?.toLowerCase().trim()) &&
+             u.password === cleanPassword
       );
+
       if (localFound) {
         const { password: _p, ...safe } = localFound;
         setCurrentUser(safe as AdminUser);
@@ -771,7 +804,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         return true;
       }
-      throw err;
+      throw new Error('ভুল ইমেইল অথবা পাসওয়ার্ড! অনুগ্রহ করে আবার চেষ্টা করুন।');
     }
     return false;
   };
